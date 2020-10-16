@@ -14,7 +14,7 @@ public interface PersonContact {
 	/**
 	 * Id of the contact person.
 	 */
-	int getContactPersonId();
+	Id<Person> getContactPersonId();
 
 	/**
 	 * Activity that the other person performed.
@@ -35,7 +35,7 @@ public interface PersonContact {
 	 * Creates a new instance with simple representation.
 	 */
 	static PersonContact newInstance(Id<Person> contactPerson, EpisimConfigGroup.InfectionParams params, int offset, int duration) {
-		return new PersonContactImpl(contactPerson.index(), params, offset, duration);
+		return new PersonContactImpl(contactPerson, params, offset, duration);
 	}
 
 }

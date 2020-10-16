@@ -23,6 +23,8 @@ package org.matsim.episim;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.csv.CSVFormat;
@@ -41,6 +43,7 @@ import org.apache.commons.math3.random.BitsStreamGenerator;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Pair;
+import org.matsim.api.core.v01.Id;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
@@ -169,9 +172,10 @@ public final class EpisimUtils {
 
 	/**
 	 * Find the current valid entry from a map of dates and values.
-	 * @param map map of values, assumed to be sorted by date
+	 *
+	 * @param map          map of values, assumed to be sorted by date
 	 * @param defaultValue default value
-	 * @param date date to search for
+	 * @param date         date to search for
 	 * @return value from the map larger or equal to {@code date}
 	 */
 	public static <T> T findValidEntry(Map<LocalDate, T> map, T defaultValue, LocalDate date) {
@@ -228,6 +232,31 @@ public final class EpisimUtils {
 		byte[] content = new byte[length];
 		in.readFully(content, 0, length);
 		return new String(content, 0, length, StandardCharsets.ISO_8859_1);
+	}
+
+	/**
+	 * Write a mapping of ids.
+	 */
+	public static <T> void writeIdMap(DataOutput out, Int2ObjectMap<Id<T>> ids) throws IOException {
+		out.writeInt(ids.size());
+		for (Int2ObjectMap.Entry<Id<T>> e : ids.int2ObjectEntrySet()) {
+			out.writeInt(e.getIntKey());
+			writeChars(out, e.getValue().toString());
+		}
+	}
+
+	/**
+	 * Read mapping of ids.
+	 */
+	public static <T> Int2ObjectMap<Id<T>> readIdMap(DataInput in, Class<T> type) throws IOException {
+		Int2ObjectMap<Id<T>> result = new Int2ObjectArrayMap<>();
+		int n = in.readInt();
+		for (int i = 0; i < n; i++) {
+			int k = in.readInt();
+			result.put(k, Id.create(readChars(in), type));
+
+		}
+		return result;
 	}
 
 	/**

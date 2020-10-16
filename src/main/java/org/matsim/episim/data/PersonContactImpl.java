@@ -1,5 +1,7 @@
 package org.matsim.episim.data;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
 
 /**
@@ -7,12 +9,12 @@ import org.matsim.episim.EpisimConfigGroup;
  */
 class PersonContactImpl implements PersonContact {
 
-	private final int contactPersonId;
+	private final Id<Person> contactPersonId;
 	private final EpisimConfigGroup.InfectionParams param;
 	private final int offset;
 	private final int duration;
 
-	PersonContactImpl(int contactPersonId, EpisimConfigGroup.InfectionParams param, int offset, int duration) {
+	PersonContactImpl(Id<Person> contactPersonId, EpisimConfigGroup.InfectionParams param, int offset, int duration) {
 		this.contactPersonId = contactPersonId;
 		this.param = param;
 		this.offset = offset;
@@ -20,7 +22,7 @@ class PersonContactImpl implements PersonContact {
 	}
 
 	@Override
-	public int getContactPersonId() {
+	public Id<Person> getContactPersonId() {
 		return contactPersonId;
 	}
 

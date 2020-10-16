@@ -1,5 +1,7 @@
 package org.matsim.episim.data;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
 
 import java.util.Iterator;
@@ -8,19 +10,20 @@ import java.util.List;
 /**
  * Basic implementation of the person leave event.
  */
-class PersonLeaveEventImpl implements PersonLeaveEvent {
+class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 
-	private final int personId;
-	private final int facilityId;
+	private final Id<Person> personId;
+	private final Id<EpisimContainer> containerId;
 	private final boolean isVehicle;
 	private final EpisimConfigGroup.InfectionParams param;
 	private final int leaveTime;
 	private final int enterTime;
 	private final List<PersonContact> contacts;
 
-	PersonLeaveEventImpl(int personId, int facilityId, boolean isVehicle, EpisimConfigGroup.InfectionParams param, int leaveTime, int enterTime, List<PersonContact> contacts) {
+	PersonLeavesContainerEventImpl(Id<Person> personId, Id<EpisimContainer> containerId, boolean isVehicle,
+								   EpisimConfigGroup.InfectionParams param, int leaveTime, int enterTime, List<PersonContact> contacts) {
 		this.personId = personId;
-		this.facilityId = facilityId;
+		this.containerId = containerId;
 		this.isVehicle = isVehicle;
 		this.param = param;
 		this.leaveTime = leaveTime;
@@ -29,13 +32,13 @@ class PersonLeaveEventImpl implements PersonLeaveEvent {
 	}
 
 	@Override
-	public int getPersonId() {
+	public Id<Person> getPersonId() {
 		return personId;
 	}
 
 	@Override
-	public int getFacilityId() {
-		return facilityId;
+	public Id<EpisimContainer> getContainerId() {
+		return containerId;
 	}
 
 	@Override

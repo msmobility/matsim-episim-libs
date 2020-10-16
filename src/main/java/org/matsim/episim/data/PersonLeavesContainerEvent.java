@@ -2,26 +2,26 @@ package org.matsim.episim.data;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.api.internal.HasPersonId;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.facilities.ActivityFacility;
 
 import java.util.List;
 
 /**
- * Low-level event of a person leaving a facility.
+ * Low-level event of a person leaving a container (facility or vehicle).
  * Instances of this class must not be stored, only consumed!
  */
-public interface PersonLeaveEvent extends Iterable<PersonContact> {
+public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<PersonContact> {
 
 	/**
 	 * Id of the leaving person.
 	 */
-	int getPersonId();
+	Id<Person> getPersonId();
 
 	/**
-	 * Id of the facility left.
+	 * Id of the container left.
 	 */
-	int getFacilityId();
+	Id<EpisimContainer> getContainerId();
 
 	/**
 	 * Whether this container is a vehicle.
@@ -51,10 +51,10 @@ public interface PersonLeaveEvent extends Iterable<PersonContact> {
 	/**
 	 * Creates a new instances of a person leave event.
 	 */
-	static PersonLeaveEvent newInstance(Id<Person> personId, Id<ActivityFacility> facilityId,
-										boolean isVehicle, EpisimConfigGroup.InfectionParams param,
-										int leaveTime, int enterTime, List<PersonContact> contacts) {
-		return new PersonLeaveEventImpl(personId.index(), facilityId.index(), isVehicle, param, leaveTime, enterTime, contacts);
+	static PersonLeavesContainerEvent newInstance(Id<Person> personId, Id<EpisimContainer> containerId,
+												  boolean isVehicle, EpisimConfigGroup.InfectionParams param,
+												  int leaveTime, int enterTime, List<PersonContact> contacts) {
+		return new PersonLeavesContainerEventImpl(personId, containerId, isVehicle, param, leaveTime, enterTime, contacts);
 	}
 
 }

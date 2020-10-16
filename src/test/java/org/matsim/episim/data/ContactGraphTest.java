@@ -51,28 +51,36 @@ public class ContactGraphTest {
 	}
 
 	private void assertCorrectGraph(ContactGraph g) {
-		Iterator<PersonLeaveEvent> it = g.iterator();
-		PersonLeaveEvent ev = it.next();
+		Iterator<PersonLeavesContainerEvent> it = g.iterator();
+		PersonLeavesContainerEvent ev = it.next();
 
-		assertThat(ev.getPersonId()).isEqualTo(Id.createPersonId(1).index());
-		assertThat(ev.getFacilityId()).isEqualTo(Id.create(2, ActivityFacility.class).index());
-		assertThat(ev.isInVehicle()).isEqualTo(true);
+		assertThat(ev.getPersonId()).isEqualTo(Id.createPersonId(1));
+		assertThat(ev.getContainerId()).isEqualTo(Id.create(2, EpisimContainer.class));
+		assertThat(ev.isInVehicle()).isTrue();
 		assertThat(ev.getActivity()).isEqualTo(infectionParams.get(0));
 		assertThat(ev.getLeaveTime()).isEqualTo(1000);
 		assertThat(ev.getEnterTime()).isEqualTo(2000);
 
+		assertThat(ev)
+				.hasSize(2);
+
 		ev = it.next();
 
+		assertThat(ev.getPersonId()).isEqualTo(Id.createPersonId(2));
+		assertThat(ev.isInVehicle()).isFalse();
+		assertThat(ev.getLeaveTime()).isEqualTo(5000);
 
+		assertThat(ev)
+				.hasSize(2);
 
 		assertThat(it.hasNext()).isFalse();
 	}
 
-	private List<PersonLeaveEvent> generateEvents() {
+	private List<PersonLeavesContainerEvent> generateEvents() {
 		return List.of(
-				PersonLeaveEvent.newInstance(
+				PersonLeavesContainerEvent.newInstance(
 						Id.createPersonId(1),
-						Id.create(2, ActivityFacility.class),
+						Id.create(2, EpisimContainer.class),
 						true,
 						infectionParams.get(0),
 						1000,
@@ -92,9 +100,9 @@ public class ContactGraphTest {
 								)
 						)
 				),
-				PersonLeaveEvent.newInstance(
+				PersonLeavesContainerEvent.newInstance(
 						Id.createPersonId(2),
-						Id.create(3, ActivityFacility.class),
+						Id.create(3, EpisimContainer.class),
 						false,
 						infectionParams.get(1),
 						5000,

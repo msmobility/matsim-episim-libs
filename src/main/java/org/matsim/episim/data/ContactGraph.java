@@ -1,15 +1,18 @@
 package org.matsim.episim.data;
 
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import org.apache.commons.io.IOUtils;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
+import org.matsim.episim.EpisimUtils;
 import sun.misc.Unsafe;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -27,7 +30,7 @@ import java.util.List;
  * <p>
  * When the graph is not needed anymore, {@link #close()} needs to be called to free the memory again.s
  */
-public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
+public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Closeable {
 
 	/**
 	 * Access to "unsafe" features.
@@ -67,6 +70,16 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		}
 		return bb;
 	}
+
+	/**
+	 * Map of person ids.
+	 */
+	private final Int2ObjectMap<Id<Person>> persons;
+
+	/**
+	 * Map of container ids.
+	 */
+	private final Int2ObjectMap<Id<EpisimContainer>> container;
 
 	/**
 	 * Assigns each activity type a certain byte as id.
@@ -147,16 +160,21 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		for (int i = 0; i < activityTypes.length; i++) {
 			activityMap.put(activityTypes[i], (byte) i);
 		}
+
+		DataInputStream din = new DataInputStream(in);
+
+		persons = EpisimUtils.readIdMap(din, Person.class);
+		container = EpisimUtils.readIdMap(din, EpisimContainer.class);
 	}
 
 
 	/**
 	 * Creates static graph from list of events.
 	 */
-	ContactGraph(List<PersonLeaveEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams) {
+	ContactGraph(List<PersonLeavesContainerEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams) {
 
 		numEvents = eventList.size();
-		numContacts = eventList.stream().mapToInt(PersonLeaveEvent::getNumberOfContacts).sum();
+		numContacts = eventList.stream().mapToInt(PersonLeavesContainerEvent::getNumberOfContacts).sum();
 
 		events = UNSAFE.allocateMemory(numEvents * EVENT_BYTES);
 		contacts = UNSAFE.allocateMemory(numContacts * CONTACT_BYTES);
@@ -167,24 +185,35 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 			activityMap.put(activityTypes[i], (byte) i);
 		}
 
+		persons = new Int2ObjectArrayMap<>();
+		container = new Int2ObjectArrayMap<>();
+
+		for (PersonLeavesContainerEvent ev : eventList) {
+			persons.put(ev.getPersonId().index(), ev.getPersonId());
+			container.put(ev.getContainerId().index(), ev.getContainerId());
+			for (PersonContact c : ev) {
+				persons.put(c.getContactPersonId().index(), c.getContactPersonId());
+			}
+		}
+
 		copyData(eventList);
 	}
 
 	/**
 	 * Copy data from objects into the memory.
 	 */
-	private void copyData(List<PersonLeaveEvent> eventList) {
+	private void copyData(List<PersonLeavesContainerEvent> eventList) {
 
 		int i = 0;
 		int contactIdx = 0;
 
-		LeaveEvent it = new LeaveEvent(null);
+		LeavesContainerEvent it = new LeavesContainerEvent(null);
 		Contact c = new Contact(contactIdx);
-		for (PersonLeaveEvent event : eventList) {
+		for (PersonLeavesContainerEvent event : eventList) {
 			it.setIndex(i);
 			it.setContactIndex(contactIdx);
-			it.setFacilityId(event.getFacilityId());
-			it.setPersonId(event.getPersonId());
+			it.setContainerId(event.getContainerId().index());
+			it.setPersonId(event.getPersonId().index());
 			it.setActivity(event.getActivity());
 			it.setEnterTime(event.getEnterTime());
 			it.setLeaveTime(event.getLeaveTime());
@@ -193,7 +222,7 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 
 			for (PersonContact pc : event) {
 				c.setIndex(contactIdx);
-				c.setContactPersonId(pc.getContactPersonId());
+				c.setContactPersonId(pc.getContactPersonId().index());
 				c.setOffset(pc.getOffset());
 				c.setDuration(pc.getDuration());
 				c.setContactPersonActivity(pc.getContactPersonActivity());
@@ -217,6 +246,11 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		fc.write(buf);
 		fc.write(wrapAddress(events, numEvents * EVENT_BYTES));
 		fc.write(wrapAddress(contacts, numContacts * CONTACT_BYTES));
+
+		DataOutputStream dout = new DataOutputStream(Channels.newOutputStream(fc));
+		EpisimUtils.writeIdMap(dout, persons);
+		EpisimUtils.writeIdMap(dout, container);
+
 	}
 
 	@Override
@@ -227,7 +261,7 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 
 
 	@Override
-	public Iterator<PersonLeaveEvent> iterator() {
+	public Iterator<PersonLeavesContainerEvent> iterator() {
 		return new EventIterator();
 	}
 
@@ -257,8 +291,8 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 			this.addr += CONTACT_BYTES;
 		}
 
-		public int getContactPersonId() {
-			return UNSAFE.getInt(addr);
+		public Id<Person> getContactPersonId() {
+			return persons.get(UNSAFE.getInt(addr));
 		}
 
 		private void setContactPersonId(int contactPersonId) {
@@ -294,7 +328,7 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 	/**
 	 * Person leaving a specific facility at certain time. Points to {@link #events}.
 	 */
-	public final class LeaveEvent implements PersonLeaveEvent {
+	public final class LeavesContainerEvent implements PersonLeavesContainerEvent {
 
 		private final ContactIterator it;
 
@@ -303,23 +337,23 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		 */
 		private long addr;
 
-		private LeaveEvent(ContactIterator it) {
+		private LeavesContainerEvent(ContactIterator it) {
 			this.it = it;
 		}
 
-		public int getPersonId() {
-			return UNSAFE.getInt(addr);
+		public Id<Person> getPersonId() {
+			return persons.get(UNSAFE.getInt(addr));
 		}
 
 		private void setPersonId(int personId) {
 			UNSAFE.putInt(addr, personId);
 		}
 
-		public int getFacilityId() {
-			return UNSAFE.getInt(addr + 4);
+		public Id<EpisimContainer> getContainerId() {
+			return container.get(UNSAFE.getInt(addr + 4));
 		}
 
-		private void setFacilityId(int facilityId) {
+		private void setContainerId(int facilityId) {
 			UNSAFE.putInt(addr + 4, facilityId);
 		}
 
@@ -429,9 +463,9 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 	}
 
 	/**
-	 * Iterates over all {@link LeaveEvent} in the graph.
+	 * Iterates over all {@link LeavesContainerEvent} in the graph.
 	 */
-	private final class EventIterator implements Iterator<PersonLeaveEvent> {
+	private final class EventIterator implements Iterator<PersonLeavesContainerEvent> {
 
 		/**
 		 * Contact iterator re-used when iterating over the individual events
@@ -440,7 +474,7 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		/**
 		 * The one event that is re-used and giving access to the data.
 		 */
-		private final LeaveEvent event = new LeaveEvent(contacts);
+		private final LeavesContainerEvent event = new LeavesContainerEvent(contacts);
 
 		private int index;
 
@@ -455,7 +489,7 @@ public class ContactGraph implements Iterable<PersonLeaveEvent>, Closeable {
 		}
 
 		@Override
-		public LeaveEvent next() {
+		public LeavesContainerEvent next() {
 			event.next();
 			index++;
 			return event;
