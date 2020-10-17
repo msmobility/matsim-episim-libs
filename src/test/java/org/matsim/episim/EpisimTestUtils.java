@@ -3,6 +3,8 @@ package org.matsim.episim;
 import org.matsim.api.core.v01.Id;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.mockito.Mockito;
@@ -13,17 +15,17 @@ import java.util.function.Consumer;
 
 public class EpisimTestUtils {
 
-	public static final Consumer<EpisimPerson> CONTAGIOUS = person -> person.setDiseaseStatus(0., EpisimPerson.DiseaseStatus.contagious);
-	public static final Consumer<EpisimPerson> SYMPTOMS = person -> person.setDiseaseStatus(0., EpisimPerson.DiseaseStatus.showingSymptoms);
+	public static final Consumer<MutableEpisimPerson> CONTAGIOUS = person -> person.setDiseaseStatus(0., DiseaseStatus.contagious);
+	public static final Consumer<MutableEpisimPerson> SYMPTOMS = person -> person.setDiseaseStatus(0., DiseaseStatus.showingSymptoms);
 
-	public static final Consumer<EpisimPerson> FULL_QUARANTINE = person -> {
-		person.setDiseaseStatus(0, EpisimPerson.DiseaseStatus.contagious);
-		person.setQuarantineStatus(EpisimPerson.QuarantineStatus.full, 0);
+	public static final Consumer<MutableEpisimPerson> FULL_QUARANTINE = person -> {
+		person.setDiseaseStatus(0, DiseaseStatus.contagious);
+		person.setQuarantineStatus(QuarantineStatus.full, 0);
 	};
 
-	public static final Consumer<EpisimPerson> HOME_QUARANTINE = person -> {
-		person.setDiseaseStatus(0, EpisimPerson.DiseaseStatus.showingSymptoms);
-		person.setQuarantineStatus(EpisimPerson.QuarantineStatus.atHome, 0);
+	public static final Consumer<MutableEpisimPerson> HOME_QUARANTINE = person -> {
+		person.setDiseaseStatus(0, DiseaseStatus.showingSymptoms);
+		person.setQuarantineStatus(QuarantineStatus.atHome, 0);
 	};
 
 	private static final AtomicLong ID = new AtomicLong(0);
@@ -74,7 +76,7 @@ public class EpisimTestUtils {
 	/**
 	 * Create facility with n persons in it.
 	 */
-	public static InfectionEventHandler.EpisimFacility createFacility(int n, String act, Consumer<EpisimPerson> init) {
+	public static InfectionEventHandler.EpisimFacility createFacility(int n, String act, Consumer<MutableEpisimPerson> init) {
 		InfectionEventHandler.EpisimFacility container = createFacility();
 		return addPersons(container, n, act, init);
 	}
@@ -82,7 +84,7 @@ public class EpisimTestUtils {
 	/**
 	 * Create a facility with certain group size.
 	 */
-	public static InfectionEventHandler.EpisimFacility createFacility(int n, String act, int groupSize, Consumer<EpisimPerson> init) {
+	public static InfectionEventHandler.EpisimFacility createFacility(int n, String act, int groupSize, Consumer<MutableEpisimPerson> init) {
 		InfectionEventHandler.EpisimFacility container = createFacility();
 		container.setMaxGroupSize(groupSize);
 		return addPersons(container, n, act, init);
@@ -91,10 +93,10 @@ public class EpisimTestUtils {
 	/**
 	 * Create a person and add to container.
 	 */
-	public static EpisimPerson createPerson(String currentAct, @Nullable MutableEpisimContainer<?> container) {
-		EpisimPerson p = new EpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
+	public static MutableEpisimPerson createPerson(String currentAct, @Nullable MutableEpisimContainer<?> container) {
+		MutableEpisimPerson p = new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
 
-		p.getTrajectory().add(new EpisimPerson.Activity(currentAct, TEST_CONFIG.selectInfectionParams(currentAct)));
+		p.getTrajectory().add(new MutableEpisimPerson.Activity(currentAct, TEST_CONFIG.selectInfectionParams(currentAct)));
 
 		if (container != null) {
 			container.addPerson(p, 0);
@@ -106,17 +108,17 @@ public class EpisimTestUtils {
 	/**
 	 * Create a person with specific reporting.
 	 */
-	public static EpisimPerson createPerson(EpisimReporting reporting) {
-		return new EpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
+	public static MutableEpisimPerson createPerson(EpisimReporting reporting) {
+		return new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
 	}
 
 	/**
 	 * Add persons to a facility.
 	 */
 	public static InfectionEventHandler.EpisimFacility addPersons(InfectionEventHandler.EpisimFacility container, int n,
-																  String act, Consumer<EpisimPerson> init) {
+																  String act, Consumer<MutableEpisimPerson> init) {
 		for (int i = 0; i < n; i++) {
-			EpisimPerson p = createPerson(act, container);
+			MutableEpisimPerson p = createPerson(act, container);
 			init.accept(p);
 		}
 
@@ -126,7 +128,7 @@ public class EpisimTestUtils {
 	/**
 	 * Remove person from container.
 	 */
-	public static void removePerson(MutableEpisimContainer<?> container, EpisimPerson p) {
+	public static void removePerson(MutableEpisimContainer<?> container, MutableEpisimPerson p) {
 		container.removePerson(p);
 	}
 

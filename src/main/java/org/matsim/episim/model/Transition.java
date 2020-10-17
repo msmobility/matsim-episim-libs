@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigValue;
 import org.apache.commons.math3.util.FastMath;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.EpisimUtils;
 
 import java.util.*;

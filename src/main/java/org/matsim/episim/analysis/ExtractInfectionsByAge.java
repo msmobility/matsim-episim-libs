@@ -12,7 +12,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.population.PopulationUtils;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.events.EpisimPersonStatusEventHandler;
 import org.matsim.run.AnalysisCommand;
 import picocli.CommandLine;
@@ -124,12 +124,12 @@ public class ExtractInfectionsByAge implements Callable<Integer> {
 		bw.close();
 
 		// Writer for other disease states
-		Map<EpisimPerson.DiseaseStatus, BufferedWriter> writer = new EnumMap<>(EpisimPerson.DiseaseStatus.class);
+		Map<DiseaseStatus, BufferedWriter> writer = new EnumMap<>(DiseaseStatus.class);
 
-		writer.put(EpisimPerson.DiseaseStatus.seriouslySick, Files.newBufferedWriter(path.resolve(id + "post.seriouslySickByAge.txt")));
-		writer.put(EpisimPerson.DiseaseStatus.critical, Files.newBufferedWriter(path.resolve(id + "post.criticalByAge.txt")));
+		writer.put(DiseaseStatus.seriouslySick, Files.newBufferedWriter(path.resolve(id + "post.seriouslySickByAge.txt")));
+		writer.put(DiseaseStatus.critical, Files.newBufferedWriter(path.resolve(id + "post.criticalByAge.txt")));
 
-		Map<EpisimPerson.DiseaseStatus, Int2IntMap> counts = new EnumMap<>(EpisimPerson.DiseaseStatus.class);
+		Map<DiseaseStatus, Int2IntMap> counts = new EnumMap<>(DiseaseStatus.class);
 		writer.keySet().forEach(k -> counts.put(k, new Int2IntOpenHashMap()));
 
 		for (BufferedWriter w : writer.values()) {
@@ -138,7 +138,7 @@ public class ExtractInfectionsByAge implements Callable<Integer> {
 		}
 
 		Runnable writeRow = () -> {
-			for (Map.Entry<EpisimPerson.DiseaseStatus, BufferedWriter> e : writer.entrySet()) {
+			for (Map.Entry<DiseaseStatus, BufferedWriter> e : writer.entrySet()) {
 
 				Int2IntMap day = counts.get(e.getKey());
 				try {

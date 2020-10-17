@@ -35,6 +35,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.events.EpisimContactEvent;
 import org.matsim.episim.events.EpisimInfectionEvent;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
@@ -76,9 +77,9 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	private final EpisimConfigGroup.WriteEvents writeEvents;
 
 	/**
-	 * Aggregated cumulative cases by status and district. Contains only a subset of relevant {@link org.matsim.episim.EpisimPerson.DiseaseStatus}.
+	 * Aggregated cumulative cases by status and district. Contains only a subset of relevant {@link DiseaseStatus}.
 	 */
-	private final Map<EpisimPerson.DiseaseStatus, Object2IntMap<String>> cumulativeCases = new EnumMap<>(EpisimPerson.DiseaseStatus.class);
+	private final Map<DiseaseStatus, Object2IntMap<String>> cumulativeCases = new EnumMap<>(DiseaseStatus.class);
 
 	/**
 	 * Number format for logging output. Not static because not thread-safe.
@@ -139,10 +140,10 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		writeEvents = episimConfig.getWriteEvents();
 
 		// Init cumulative cases
-		cumulativeCases.put(EpisimPerson.DiseaseStatus.contagious, new Object2IntOpenHashMap<>());
-		cumulativeCases.put(EpisimPerson.DiseaseStatus.showingSymptoms, new Object2IntOpenHashMap<>());
-		cumulativeCases.put(EpisimPerson.DiseaseStatus.seriouslySick, new Object2IntOpenHashMap<>());
-		cumulativeCases.put(EpisimPerson.DiseaseStatus.critical, new Object2IntOpenHashMap<>());
+		cumulativeCases.put(DiseaseStatus.contagious, new Object2IntOpenHashMap<>());
+		cumulativeCases.put(DiseaseStatus.showingSymptoms, new Object2IntOpenHashMap<>());
+		cumulativeCases.put(DiseaseStatus.seriouslySick, new Object2IntOpenHashMap<>());
+		cumulativeCases.put(DiseaseStatus.critical, new Object2IntOpenHashMap<>());
 
 		writeConfigFiles();
 	}
@@ -196,7 +197,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	/**
 	 * Creates infections reports for the day. Grouped by district, but always containing a "total" entry.
 	 */
-	Map<String, InfectionReport> createReports(Collection<EpisimPerson> persons, int iteration) {
+	Map<String, InfectionReport> createReports(Collection<MutableEpisimPerson> persons, int iteration) {
 
 		Map<String, InfectionReport> reports = new LinkedHashMap<>();
 
@@ -206,7 +207,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		InfectionReport report = new InfectionReport("total", time, date, iteration);
 		reports.put("total", report);
 
-		for (EpisimPerson person : persons) {
+		for (MutableEpisimPerson person : persons) {
 			String districtName = (String) person.getAttributes().getAttribute("district");
 
 			// Also aggregate by district
@@ -274,10 +275,10 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 
 		for (String district : reports.keySet()) {
 
-			int nContagious = cumulativeCases.get(EpisimPerson.DiseaseStatus.contagious).getOrDefault(district, 0);
-			int nShowingSymptoms = cumulativeCases.get(EpisimPerson.DiseaseStatus.showingSymptoms).getOrDefault(district, 0);
-			int nSeriouslySick = cumulativeCases.get(EpisimPerson.DiseaseStatus.seriouslySick).getOrDefault(district, 0);
-			int nCritical = cumulativeCases.get(EpisimPerson.DiseaseStatus.critical).getOrDefault(district, 0);
+			int nContagious = cumulativeCases.get(DiseaseStatus.contagious).getOrDefault(district, 0);
+			int nShowingSymptoms = cumulativeCases.get(DiseaseStatus.showingSymptoms).getOrDefault(district, 0);
+			int nSeriouslySick = cumulativeCases.get(DiseaseStatus.seriouslySick).getOrDefault(district, 0);
+			int nCritical = cumulativeCases.get(DiseaseStatus.critical).getOrDefault(district, 0);
 
 			reports.get(district).nContagiousCumulative = nContagious;
 			reports.get(district).nShowingSymptomsCumulative = nShowingSymptoms;
@@ -359,7 +360,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 * @param infector      infector
 	 * @param infectionType activities of both persons
 	 */
-	public void reportInfection(EpisimPerson personWrapper, EpisimPerson infector, double now, String infectionType, MutableEpisimContainer<?> container) {
+	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType, MutableEpisimContainer<?> container) {
 
 		int cnt = specificInfectionsCnt.getOpaque();
 		// This counter is used by many threads, for better performance we use very weak memory guarantees here
@@ -391,7 +392,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 *
 	 * @see EpisimContactEvent
 	 */
-	public void reportContact(double now, EpisimPerson person, EpisimPerson contactPerson, MutableEpisimContainer<?> container,
+	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, MutableEpisimContainer<?> container,
 							  StringBuilder actType, double duration) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
@@ -405,7 +406,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	/**
 	 * Report the successful tracing between two persons.
 	 */
-	void reportTracing(double now, EpisimPerson person, EpisimPerson contactPerson) {
+	void reportTracing(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
 			manager.processEvent(new EpisimTracingEvent(now, person.getPersonId(), contactPerson.getPersonId()));
@@ -419,14 +420,14 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		writer.append(restrictionReport, "\n");
 	}
 
-	void reportTimeUse(Set<String> activities, Collection<EpisimPerson> persons, long iteration, String date) {
+	void reportTimeUse(Set<String> activities, Collection<MutableEpisimPerson> persons, long iteration, String date) {
 
 		if (iteration == 0) return;
 
 		Object2DoubleMap<String> avg = new Object2DoubleOpenHashMap<>();
 
 		int i = 1;
-		for (EpisimPerson person : persons) {
+		for (MutableEpisimPerson person : persons) {
 
 			// Average += (NewValue - Average) / NewSampleCount;
 			for (String act : activities) {
@@ -455,12 +456,12 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	/**
 	 * Report that a person status has changed and publish corresponding event.
 	 */
-	public void reportPersonStatus(EpisimPerson person, EpisimPersonStatusEvent event) {
+	public void reportPersonStatus(MutableEpisimPerson person, EpisimPersonStatusEvent event) {
 
-		EpisimPerson.DiseaseStatus newStatus = event.getDiseaseStatus();
+		DiseaseStatus newStatus = event.getDiseaseStatus();
 
-		if (newStatus == EpisimPerson.DiseaseStatus.seriouslySick || newStatus == EpisimPerson.DiseaseStatus.contagious ||
-				newStatus == EpisimPerson.DiseaseStatus.showingSymptoms || newStatus == EpisimPerson.DiseaseStatus.critical) {
+		if (newStatus == DiseaseStatus.seriouslySick || newStatus == DiseaseStatus.contagious ||
+				newStatus == DiseaseStatus.showingSymptoms || newStatus == DiseaseStatus.critical) {
 			String districtName = (String) person.getAttributes().getAttribute("district");
 			cumulativeCases.get(newStatus).mergeInt(districtName == null ? "unknown" : districtName, 1, Integer::sum);
 		}
@@ -552,7 +553,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 
 		out.writeInt(cumulativeCases.size());
 
-		for (Map.Entry<EpisimPerson.DiseaseStatus, Object2IntMap<String>> e : cumulativeCases.entrySet()) {
+		for (Map.Entry<DiseaseStatus, Object2IntMap<String>> e : cumulativeCases.entrySet()) {
 			out.writeInt(e.getKey().ordinal());
 			Object2IntMap<String> map = e.getValue();
 			out.writeInt(map.size());
@@ -569,7 +570,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 
 		int states = in.readInt();
 		for (int i = 0; i < states; i++) {
-			EpisimPerson.DiseaseStatus state = EpisimPerson.DiseaseStatus.values()[in.readInt()];
+			DiseaseStatus state = DiseaseStatus.values()[in.readInt()];
 			int size = in.readInt();
 			for (int j = 0; j < size; j++) {
 				String key = readChars(in);

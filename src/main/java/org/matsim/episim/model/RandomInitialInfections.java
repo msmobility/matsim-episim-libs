@@ -9,8 +9,9 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.EpisimUtils;
+import org.matsim.episim.data.DiseaseStatus;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -37,7 +38,7 @@ public class RandomInitialInfections implements InitialInfectionHandler {
 	}
 
 	@Override
-	public void handleInfections(Map<Id<Person>, EpisimPerson> persons, int iteration) {
+	public void handleInfections(Map<Id<Person>, MutableEpisimPerson> persons, int iteration) {
 
 		if (initialInfectionsLeft == 0) return;
 
@@ -52,11 +53,11 @@ public class RandomInitialInfections implements InitialInfectionHandler {
 
 		int numInfections = EpisimUtils.findValidEntry(episimConfig.getInfections_pers_per_day(), 1, date);
 
-		List<EpisimPerson> candidates = persons.values().stream()
+		List<MutableEpisimPerson> candidates = persons.values().stream()
 				.filter(p -> district == null || district.equals(p.getAttributes().getAttribute("district")))
 				.filter(p -> lowerAgeBoundaryForInitInfections == -1 || (int) p.getAttributes().getAttribute("microm:modeled:age") >= lowerAgeBoundaryForInitInfections)
 				.filter(p -> upperAgeBoundaryForInitInfections == -1 || (int) p.getAttributes().getAttribute("microm:modeled:age") <= upperAgeBoundaryForInitInfections)
-				.filter(p -> p.getDiseaseStatus() == EpisimPerson.DiseaseStatus.susceptible)
+				.filter(p -> p.getDiseaseStatus() == DiseaseStatus.susceptible)
 				.collect(Collectors.toList());
 
 		if (candidates.size() < numInfections) {
@@ -65,9 +66,9 @@ public class RandomInitialInfections implements InitialInfectionHandler {
 		}
 
 		while (numInfections > 0 && initialInfectionsLeft > 0) {
-			EpisimPerson randomPerson = candidates.get(rnd.nextInt(candidates.size()));
-			if (randomPerson.getDiseaseStatus() == EpisimPerson.DiseaseStatus.susceptible) {
-				randomPerson.setDiseaseStatus(now, EpisimPerson.DiseaseStatus.infectedButNotContagious);
+			MutableEpisimPerson randomPerson = candidates.get(rnd.nextInt(candidates.size()));
+			if (randomPerson.getDiseaseStatus() == DiseaseStatus.susceptible) {
+				randomPerson.setDiseaseStatus(now, DiseaseStatus.infectedButNotContagious);
 				log.warn("Person {} has initial infection.", randomPerson.getPersonId());
 				initialInfectionsLeft--;
 				numInfections--;

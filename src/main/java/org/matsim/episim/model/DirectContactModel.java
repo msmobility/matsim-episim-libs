@@ -29,7 +29,7 @@ import org.matsim.episim.*;
 
 import java.util.*;
 
-import static org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 import static org.matsim.episim.InfectionEventHandler.EpisimFacility;
 import static org.matsim.episim.InfectionEventHandler.EpisimVehicle;
 
@@ -55,7 +55,7 @@ public final class DirectContactModel extends AbstractContactModel {
 	 */
 	private final StringBuilder buffer = new StringBuilder();
 
-	private final Map<MutableEpisimContainer<?>, EpisimPerson> singlePersons = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer<?>, MutableEpisimPerson> singlePersons = new IdentityHashMap<>();
 	private final Map<MutableEpisimContainer<?>, List<Group>> groups = new IdentityHashMap<>();
 
 	@Inject
@@ -67,26 +67,26 @@ public final class DirectContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(EpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
+	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
 		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
 	}
 
 	@Override
-	public void infectionDynamicsFacility(EpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
+	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
 		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
 	}
 
 	@Override
-	public void notifyEnterVehicle(EpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
+	public void notifyEnterVehicle(MutableEpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
 		notifyEnterContainerGeneralized(personEnteringVehicle, vehicle, now);
 	}
 
 	@Override
-	public void notifyEnterFacility(EpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
+	public void notifyEnterFacility(MutableEpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
 		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
 	}
 
-	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
+	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
 
 		// this can happen because persons are not removed during initialization
 		if (findGroup(container, personEnteringContainer) != null)
@@ -102,7 +102,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		}
 	}
 
-	private Group findGroup(MutableEpisimContainer<?> container, EpisimPerson person) {
+	private Group findGroup(MutableEpisimContainer<?> container, MutableEpisimPerson person) {
 
 		if (!groups.containsKey(container))
 			return null;
@@ -116,7 +116,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		return null;
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 			removePersonFromGroups(container, personLeavingContainer, now);
@@ -138,9 +138,9 @@ public final class DirectContactModel extends AbstractContactModel {
 		// start tracking late as possible because of computational costs
 		boolean trackingEnabled = iteration >= trackingAfterDay;
 
-		Pair<EpisimPerson, Double> group = removePersonFromGroups(container, personLeavingContainer, now);
+		Pair<MutableEpisimPerson, Double> group = removePersonFromGroups(container, personLeavingContainer, now);
 
-		EpisimPerson contactPerson = group.getKey();
+		MutableEpisimPerson contactPerson = group.getKey();
 
 		if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, container, getRestrictions(), rnd)) {
 			return;
@@ -241,7 +241,7 @@ public final class DirectContactModel extends AbstractContactModel {
 	 *
 	 * @return contact person if person was in group.
 	 */
-	private Pair<EpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer<?> container, EpisimPerson personLeavingContainer, double time) {
+	private Pair<MutableEpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer<?> container, MutableEpisimPerson personLeavingContainer, double time) {
 		if (singlePersons.get(container) == personLeavingContainer) {
 			singlePersons.remove(container);
 			return null;
@@ -253,7 +253,7 @@ public final class DirectContactModel extends AbstractContactModel {
 				return null;
 
 			// other person will be single person
-			EpisimPerson leftOverPerson = group.remove(personLeavingContainer);
+			MutableEpisimPerson leftOverPerson = group.remove(personLeavingContainer);
 			if (!singlePersons.containsKey(container)) {
 				singlePersons.put(container, leftOverPerson);
 			} else {
@@ -276,28 +276,28 @@ public final class DirectContactModel extends AbstractContactModel {
 	 */
 	private static final class Group {
 
-		private final EpisimPerson a;
-		private final EpisimPerson b;
+		private final MutableEpisimPerson a;
+		private final MutableEpisimPerson b;
 		private final double time;
 
-		private Group(EpisimPerson a, EpisimPerson b, double time) {
+		private Group(MutableEpisimPerson a, MutableEpisimPerson b, double time) {
 			this.a = a;
 			this.b = b;
 			this.time = time;
 		}
 
-		private static Group of(EpisimPerson a, EpisimPerson b, double time) {
+		private static Group of(MutableEpisimPerson a, MutableEpisimPerson b, double time) {
 			return new Group(a, b, time);
 		}
 
-		public boolean contains(EpisimPerson person) {
+		public boolean contains(MutableEpisimPerson person) {
 			return a == person || b == person;
 		}
 
 		/**
 		 * Return the left over person.
 		 */
-		public EpisimPerson remove(EpisimPerson p) {
+		public MutableEpisimPerson remove(MutableEpisimPerson p) {
 			if (p == a) return b;
 			else if (p == b) return a;
 			throw new IllegalStateException("Leaving person not in group.");

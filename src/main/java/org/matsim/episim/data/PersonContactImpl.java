@@ -9,12 +9,12 @@ import org.matsim.episim.EpisimConfigGroup;
  */
 class PersonContactImpl implements PersonContact {
 
-	private final EpisimPerson contactPerson;
+	private final Id<Person> contactPerson;
 	private final EpisimConfigGroup.InfectionParams param;
 	private final int offset;
 	private final int duration;
 
-	PersonContactImpl(EpisimPerson contactPersonId, EpisimConfigGroup.InfectionParams param, int offset, int duration) {
+	PersonContactImpl(Id<Person> contactPersonId, EpisimConfigGroup.InfectionParams param, int offset, int duration) {
 		this.contactPerson = contactPersonId;
 		this.param = param;
 		this.offset = offset;
@@ -22,7 +22,7 @@ class PersonContactImpl implements PersonContact {
 	}
 
 	@Override
-	public EpisimPerson getContactPerson() {
+	public Id<Person> getContactPerson() {
 		return contactPerson;
 	}
 

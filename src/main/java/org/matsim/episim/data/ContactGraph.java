@@ -5,6 +5,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import org.apache.commons.io.IOUtils;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
 import sun.misc.Unsafe;
 
@@ -72,7 +74,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Map of person ids.
 	 */
-	private final Int2ObjectMap<EpisimPerson> persons;
+	private final Int2ObjectMap<Id<Person>> persons;
 
 	/**
 	 * Map of available container.
@@ -135,7 +137,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	 * Create graph by reading it from dist.
 	 */
 	ContactGraph(InputStream in, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
-				 Int2ObjectMap<EpisimPerson> persons, Int2ObjectMap<EpisimContainer> container) throws IOException {
+				 Int2ObjectMap<Id<Person>> persons, Int2ObjectMap<EpisimContainer> container) throws IOException {
 
 		ReadableByteChannel c = Channels.newChannel(in);
 		ByteBuffer sizes = ByteBuffer.allocate(Integer.BYTES * 2);
@@ -169,7 +171,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	 * Creates static graph from list of events.
 	 */
 	ContactGraph(List<PersonLeavesContainerEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
-				 Int2ObjectMap<EpisimPerson> persons, Int2ObjectMap<EpisimContainer> container) {
+				 Int2ObjectMap<Id<Person>> persons, Int2ObjectMap<EpisimContainer> container) {
 
 		numEvents = eventList.size();
 		numContacts = eventList.stream().mapToInt(PersonLeavesContainerEvent::getNumberOfContacts).sum();
@@ -211,7 +213,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 
 			for (PersonContact pc : event) {
 				c.setIndex(contactIdx);
-				c.setContactPersonId(pc.getContactPerson().getId().index());
+				c.setContactPersonId(pc.getContactPerson().index());
 				c.setOffset(pc.getOffset());
 				c.setDuration(pc.getDuration());
 				c.setContactPersonActivity(pc.getContactPersonActivity());
@@ -275,7 +277,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			this.addr += CONTACT_BYTES;
 		}
 
-		public EpisimPerson getContactPerson() {
+		public Id<Person> getContactPerson() {
 			return persons.get(UNSAFE.getInt(addr));
 		}
 
@@ -325,7 +327,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			this.it = it;
 		}
 
-		public EpisimPerson getPerson() {
+		public Id<Person> getPersonId() {
 			return persons.get(UNSAFE.getInt(addr));
 		}
 

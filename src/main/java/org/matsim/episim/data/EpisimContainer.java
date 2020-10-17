@@ -4,7 +4,15 @@ import org.matsim.api.core.v01.Id;
 
 public interface EpisimContainer {
 
+	/**
+	 * Id of this container.
+	 */
 	Id<EpisimContainer> getId();
+
+	/**
+	 * Whether this is a vehicle.
+	 */
+	boolean isVehicle();
 
 	/**
 	 * The maximum number of persons simultaneously in this container. Negative if unknown.

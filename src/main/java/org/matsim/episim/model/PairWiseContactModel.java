@@ -28,7 +28,7 @@ import org.matsim.episim.*;
 
 import java.util.*;
 
-import static org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 import static org.matsim.episim.InfectionEventHandler.EpisimFacility;
 import static org.matsim.episim.InfectionEventHandler.EpisimVehicle;
 
@@ -57,9 +57,9 @@ public final class PairWiseContactModel extends AbstractContactModel {
 	/**
 	 * Reusable list for contact persons.
 	 */
-	private final List<EpisimPerson> contactPersons = new ArrayList<>();
+	private final List<MutableEpisimPerson> contactPersons = new ArrayList<>();
 
-	private final Map<MutableEpisimContainer<?>, Set<EpisimPerson>> contacts = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer<?>, Set<MutableEpisimPerson>> contacts = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ PairWiseContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -70,26 +70,26 @@ public final class PairWiseContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(EpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
+	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
 		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
 	}
 
 	@Override
-	public void infectionDynamicsFacility(EpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
+	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
 		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
 	}
 
 	@Override
-	public void notifyEnterVehicle(EpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
+	public void notifyEnterVehicle(MutableEpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
 		notifyEnterContainerGeneralized(personEnteringVehicle, vehicle, now);
 	}
 
 	@Override
-	public void notifyEnterFacility(EpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
+	public void notifyEnterFacility(MutableEpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
 		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
 	}
 
-	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
+	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
 		try {
 			if (checkPersonInContainer(personEnteringContainer, container, getRestrictions(), rnd)) {
 				contacts.computeIfAbsent(container, (k) -> new HashSet<>()).add(personEnteringContainer);
@@ -99,7 +99,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 		}
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 
@@ -123,7 +123,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 		if (contactPersons.size() == 0)
 			return;
 
-		EpisimPerson contactPerson = contactPersons.get(rnd.nextInt(contactPersons.size()));
+		MutableEpisimPerson contactPerson = contactPersons.get(rnd.nextInt(contactPersons.size()));
 		contacts.get(container).remove(contactPerson);
 		contactPersons.clear();
 

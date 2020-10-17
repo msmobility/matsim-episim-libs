@@ -10,7 +10,8 @@ import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.*;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.facilities.ActivityFacility;
 
 import java.io.IOException;
@@ -136,7 +137,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	}
 
 	@Override
-	public final void updateState(EpisimPerson person, int day) {
+	public final void updateState(MutableEpisimPerson person, int day) {
 		super.updateState(person, day);
 
 		// account for the delay in showing symptoms and tracing
@@ -145,7 +146,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 
 		// A healthy quarantined person is dismissed from quarantine after some time
 		if (releasePerson(person) && person.daysSinceQuarantine(day) > tracingConfig.getQuarantineDuration()) {
-			person.setQuarantineStatus(EpisimPerson.QuarantineStatus.no, day);
+			person.setQuarantineStatus(QuarantineStatus.no, day);
 		}
 
 		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), 0, day);
@@ -164,10 +165,10 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	/**
 	 * Checks whether person can be released from quarantine.
 	 */
-	private boolean releasePerson(EpisimPerson person) {
+	private boolean releasePerson(MutableEpisimPerson person) {
 
 		// person not in quarantine can not be released
-		if (person.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no)
+		if (person.getQuarantineStatus() == QuarantineStatus.no)
 			return false;
 
 		TracingConfigGroup.QuarantineRelease release = tracingConfig.getQuarantineRelease();
@@ -184,11 +185,11 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	}
 
 	@Override
-	protected final void onTransition(EpisimPerson person, double now, int day, DiseaseStatus from, DiseaseStatus to) {
+	protected final void onTransition(MutableEpisimPerson person, double now, int day, DiseaseStatus from, DiseaseStatus to) {
 
 		if (to == DiseaseStatus.showingSymptoms) {
 
-			person.setQuarantineStatus(EpisimPerson.QuarantineStatus.full, day);
+			person.setQuarantineStatus(QuarantineStatus.full, day);
 			// Perform tracing immediately if there is no delay, otherwise needs to be done when person shows symptoms
 			if (tracingConfig.getTracingDelay() == 0) {
 				performTracing(person, now, day);
@@ -211,7 +212,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	}
 
 	@Override
-	public final void beforeStateUpdates(Map<Id<Person>, EpisimPerson> persons, int day, EpisimReporting.InfectionReport report) {
+	public final void beforeStateUpdates(Map<Id<Person>, MutableEpisimPerson> persons, int day, EpisimReporting.InfectionReport report) {
 
 		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), 0, day);
 
@@ -227,7 +228,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 
 				log.debug("Trace location {}", e.getKey());
 
-				for (EpisimPerson p : persons.values()) {
+				for (MutableEpisimPerson p : persons.values()) {
 
 					if (p.getInfectionContainer() == e.getKey()) {
 
@@ -255,7 +256,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 			while (tracingCapacity > 0 && !queue.isEmpty()) {
 
 				Id<Person> id = queue.poll();
-				EpisimPerson person = persons.get(id);
+				MutableEpisimPerson person = persons.get(id);
 				tracingQueue.remove(id);
 
 				// Assume that each contact got tested
@@ -277,7 +278,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 			double p = prob * newCases / report.nTotal();
 
 			// put persons randomly into quarantine
-			for (EpisimPerson person : persons.values()) {
+			for (MutableEpisimPerson person : persons.values()) {
 				if (rnd.nextDouble() < p)
 					quarantinePerson(person, day);
 
@@ -286,7 +287,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	}
 
 	@Override
-	protected final DiseaseStatus decideNextState(EpisimPerson person) {
+	protected final DiseaseStatus decideNextState(MutableEpisimPerson person) {
 
 		switch (person.getDiseaseStatus()) {
 			case infectedButNotContagious:
@@ -324,7 +325,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	}
 
 	@Override
-	protected final int decideTransitionDay(EpisimPerson person, DiseaseStatus from, DiseaseStatus to) {
+	protected final int decideTransitionDay(MutableEpisimPerson person, DiseaseStatus from, DiseaseStatus to) {
 		Transition t = tMatrix[from.ordinal() * DiseaseStatus.values().length + to.ordinal()];
 		if (t == null) throw new IllegalStateException(String.format("No transition from %s to %s defined", from, to));
 
@@ -334,21 +335,21 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	/**
 	 * Probability that a persons transitions from {@code showingSymptoms} to {@code seriouslySick}.
 	 */
-	protected double getProbaOfTransitioningToSeriouslySick(EpisimPerson person) {
+	protected double getProbaOfTransitioningToSeriouslySick(MutableEpisimPerson person) {
 		return 0.05625;
 	}
 
 	/**
 	 * Probability that a persons transitions from {@code seriouslySick} to {@code critical}.
 	 */
-	protected double getProbaOfTransitioningToCritical(EpisimPerson person) {
+	protected double getProbaOfTransitioningToCritical(MutableEpisimPerson person) {
 		return 0.25;
 	}
 
 	/**
 	 * Perform the tracing procedure for a person. Also ensures if enabled for current day.
 	 */
-	private void performTracing(EpisimPerson person, double now, int day) {
+	private void performTracing(MutableEpisimPerson person, double now, int day) {
 
 		if (day < tracingConfig.getPutTraceablePersonsInQuarantineAfterDay()
 				|| tracingConfig.getStrategy() == TracingConfigGroup.Strategy.RANDOM) {
@@ -365,7 +366,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 		if (tracingConfig.getQuarantineHousehold())
 			homeId = (String) person.getAttributes().getAttribute("homeId");
 
-		for (EpisimPerson pw : person.getTraceableContactPersons(now - tracingConfig.getTracingDayDistance() * DAY)) {
+		for (MutableEpisimPerson pw : person.getTraceableContactPersons(now - tracingConfig.getTracingDayDistance() * DAY)) {
 
 			if (tracingConfig.getCapacityType() == TracingConfigGroup.CapacityType.PER_CONTACT_PERSON) {
 				tracingCapacity--;
@@ -394,10 +395,10 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 		}
 	}
 
-	private void quarantinePerson(EpisimPerson p, int day) {
+	private void quarantinePerson(MutableEpisimPerson p, int day) {
 
-		if (p.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no && p.getDiseaseStatus() != DiseaseStatus.recovered) {
-			p.setQuarantineStatus(EpisimPerson.QuarantineStatus.atHome, day);
+		if (p.getQuarantineStatus() == QuarantineStatus.no && p.getDiseaseStatus() != DiseaseStatus.recovered) {
+			p.setQuarantineStatus(QuarantineStatus.atHome, day);
 
 			if (tracingConfig.getStrategy() == TracingConfigGroup.Strategy.IDENTIFY_SOURCE)
 				tracingQueue.add(p.getPersonId());

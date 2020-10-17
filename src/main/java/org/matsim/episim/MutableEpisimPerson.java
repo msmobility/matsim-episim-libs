@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimPerson;
 import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
 import org.matsim.facilities.ActivityFacility;
@@ -50,7 +51,7 @@ import static org.matsim.episim.EpisimUtils.writeChars;
 /**
  * Persons current state in the simulation.
  */
-public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, Attributable {
+public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 
 	private final Id<Person> personId;
 	private final EpisimReporting reporting;
@@ -82,7 +83,7 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 	/**
 	 * Traced contacts with other persons.
 	 */
-	private final Object2DoubleMap<EpisimPerson> traceableContactPersons = new Object2DoubleLinkedOpenHashMap<>(4);
+	private final Object2DoubleMap<MutableEpisimPerson> traceableContactPersons = new Object2DoubleLinkedOpenHashMap<>(4);
 
 	/**
 	 * Stores first time of status changes to specific type.
@@ -129,11 +130,11 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 	 */
 	private boolean traceable;
 
-	EpisimPerson(Id<Person> personId, Attributes attrs, EpisimReporting reporting) {
+	MutableEpisimPerson(Id<Person> personId, Attributes attrs, EpisimReporting reporting) {
 		this(personId, attrs, true, reporting);
 	}
 
-	EpisimPerson(Id<Person> personId, Attributes attrs, boolean traceable, EpisimReporting reporting) {
+	MutableEpisimPerson(Id<Person> personId, Attributes attrs, boolean traceable, EpisimReporting reporting) {
 		this.personId = personId;
 		this.attributes = attrs;
 		this.traceable = traceable;
@@ -145,7 +146,7 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 	 *
 	 * @param persons map of all persons in the simulation
 	 */
-	void read(ObjectInput in, Map<Id<Person>, EpisimPerson> persons,
+	void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons,
 			  Map<Id<ActivityFacility>, InfectionEventHandler.EpisimFacility> facilities,
 			  Map<Id<Vehicle>, InfectionEventHandler.EpisimVehicle> vehicles) throws IOException {
 
@@ -205,7 +206,7 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 	void write(ObjectOutput out) throws IOException {
 
 		out.writeInt(traceableContactPersons.size());
-		for (Map.Entry<EpisimPerson, Double> kv : traceableContactPersons.entrySet()) {
+		for (Map.Entry<MutableEpisimPerson, Double> kv : traceableContactPersons.entrySet()) {
 			writeChars(out, kv.getKey().getPersonId().toString());
 			out.writeDouble(kv.getValue());
 		}
@@ -320,7 +321,7 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 		return currentDay - quarantineDate;
 	}
 
-	public void addTraceableContactPerson(EpisimPerson personWrapper, double now) {
+	public void addTraceableContactPerson(MutableEpisimPerson personWrapper, double now) {
 		// check if both persons have tracing capability
 		if (isTraceable() && personWrapper.isTraceable()) {
 			// Always use the latest tracking date
@@ -332,7 +333,7 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 	/**
 	 * Get all traced contacts that happened after certain time.
 	 */
-	public List<EpisimPerson> getTraceableContactPersons(double after) {
+	public List<MutableEpisimPerson> getTraceableContactPersons(double after) {
 		return traceableContactPersons.object2DoubleEntrySet()
 				.stream().filter(p -> p.getDoubleValue() >= after)
 				.map(Map.Entry::getKey)
@@ -492,40 +493,4 @@ public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, 
 				'}';
 	}
 
-	/**
-	 * Disease status of a person.
-	 */
-	public enum DiseaseStatus {
-		susceptible, infectedButNotContagious, contagious, showingSymptoms,
-		seriouslySick, critical, seriouslySickAfterCritical, recovered
-	}
-
-	/**
-	 * Quarantine status of a person.
-	 */
-	public enum QuarantineStatus {full, atHome, no}
-
-	/**
-	 * Activity performed by a person. Holds the type and its infection params.
-	 */
-	public static final class Activity {
-
-		public final String actType;
-		public final EpisimConfigGroup.InfectionParams params;
-
-		/**
-		 * Constructor.
-		 */
-		public Activity(String actType, EpisimConfigGroup.InfectionParams params) {
-			this.actType = actType;
-			this.params = params;
-		}
-
-		@Override
-		public String toString() {
-			return "Activity{" +
-					"actType='" + actType + '\'' +
-					'}';
-		}
-	}
 }

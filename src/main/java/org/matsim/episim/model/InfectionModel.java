@@ -1,7 +1,7 @@
 package org.matsim.episim.model;
 
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.policy.Restriction;
 
 import java.util.Map;
@@ -26,8 +26,8 @@ public interface InfectionModel {
 	 * @param jointTimeInContainer joint time doing these activity in seconds
 	 * @return probability between 0 and 1
 	 */
-	double calcInfectionProbability(EpisimPerson target, EpisimPerson infector, Map<String, Restriction> restrictions,
-									EpisimConfigGroup.InfectionParams act1, EpisimConfigGroup.InfectionParams act2,
-									double jointTimeInContainer);
+	double calcInfectionProbability(MutableEpisimPerson target, MutableEpisimPerson infector, Map<String, Restriction> restrictions,
+                                    EpisimConfigGroup.InfectionParams act1, EpisimConfigGroup.InfectionParams act2,
+                                    double jointTimeInContainer);
 
 }

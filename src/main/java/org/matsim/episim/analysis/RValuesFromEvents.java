@@ -27,7 +27,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.utils.io.UncheckedIOException;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.events.*;
 import org.matsim.run.AnalysisCommand;
 import picocli.CommandLine;

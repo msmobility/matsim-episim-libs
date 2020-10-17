@@ -3,6 +3,7 @@ package org.matsim.episim.data;
 import com.google.common.annotations.Beta;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.utils.objectattributes.attributable.Attributable;
 
 /**
@@ -18,12 +19,12 @@ public interface EpisimPerson extends Attributable {
 	/**
 	 * Current {@link DiseaseStatus}.
 	 */
-	//DiseaseStatus getDiseaseStatus();
+	DiseaseStatus getDiseaseStatus();
 
 	/**
 	 * Current {@link QuarantineStatus}
 	 */
-	//QuarantineStatus getQuarantineStatus();
+	QuarantineStatus getQuarantineStatus();
 
 	/**
 	 * Days elapsed since a certain status was set.
@@ -33,12 +34,12 @@ public interface EpisimPerson extends Attributable {
 	 * @param currentDay current day (iteration)
 	 * @throws IllegalStateException when the requested status was never set
 	 */
-	//int daysSince(DiseaseStatus status, int currentDay);
+	int daysSince(DiseaseStatus status, int currentDay);
 
 	/**
 	 * Return whether a person had (or currently has) a certain disease status.
 	 */
-	//boolean hadDiseaseStatus(DiseaseStatus status);
+	boolean hadDiseaseStatus(DiseaseStatus status);
 
 	/**
 	 * Days elapsed since person was put into quarantine.
@@ -64,4 +65,27 @@ public interface EpisimPerson extends Attributable {
 	 */
 	String getInfectionType();
 
+	/**
+	 * Activity performed by a person. Holds the type and its infection params.
+	 */
+	final class Activity {
+
+		public final String actType;
+		public final EpisimConfigGroup.InfectionParams params;
+
+		/**
+		 * Constructor.
+		 */
+		public Activity(String actType, EpisimConfigGroup.InfectionParams params) {
+			this.actType = actType;
+			this.params = params;
+		}
+
+		@Override
+		public String toString() {
+			return "Activity{" +
+					"actType='" + actType + '\'' +
+					'}';
+		}
+	}
 }

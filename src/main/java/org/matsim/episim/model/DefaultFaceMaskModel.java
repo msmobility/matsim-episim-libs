@@ -2,7 +2,7 @@ package org.matsim.episim.model;
 
 import com.google.inject.Inject;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.policy.Restriction;
 
 import java.util.SplittableRandom;
@@ -21,7 +21,7 @@ public class DefaultFaceMaskModel implements FaceMaskModel {
 	}
 
 	@Override
-	public FaceMask getWornMask(EpisimPerson person, EpisimConfigGroup.InfectionParams act, Restriction restriction) {
+	public FaceMask getWornMask(MutableEpisimPerson person, EpisimConfigGroup.InfectionParams act, Restriction restriction) {
 		return restriction.determineMask(rnd);
 	}
 }

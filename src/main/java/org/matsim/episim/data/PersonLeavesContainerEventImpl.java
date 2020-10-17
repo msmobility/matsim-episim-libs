@@ -12,14 +12,14 @@ import java.util.List;
  */
 class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 
-	private final EpisimPerson person;
+	private final Id<Person> person;
 	private final EpisimContainer container;
 	private final EpisimConfigGroup.InfectionParams param;
 	private final int leaveTime;
 	private final int enterTime;
 	private final List<PersonContact> contacts;
 
-	PersonLeavesContainerEventImpl(EpisimPerson person, EpisimContainer container, EpisimConfigGroup.InfectionParams param,
+	PersonLeavesContainerEventImpl(Id<Person> person, EpisimContainer container, EpisimConfigGroup.InfectionParams param,
 								   int leaveTime, int enterTime, List<PersonContact> contacts) {
 		this.person = person;
 		this.container = container;
@@ -30,7 +30,7 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 	}
 
 	@Override
-	public EpisimPerson getPerson() {
+	public Id<Person> getPersonId() {
 		return person;
 	}
 

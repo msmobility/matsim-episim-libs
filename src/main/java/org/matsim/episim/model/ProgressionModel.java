@@ -22,14 +22,16 @@ package org.matsim.episim.model;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.EpisimReporting;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 
 import java.util.Map;
 
 /**
- * This class models the {@link org.matsim.episim.EpisimPerson.DiseaseStatus} state transitions at the end of the day.
- * The model should also update the {@link org.matsim.episim.EpisimPerson.QuarantineStatus} of affected persons.
+ * This class models the {@link DiseaseStatus} state transitions at the end of the day.
+ * The model should also update the {@link QuarantineStatus} of affected persons.
  */
 public interface ProgressionModel {
 
@@ -42,12 +44,12 @@ public interface ProgressionModel {
 	/**
 	 * Called at the start of the day to update the state of a person.
 	 */
-	void updateState(EpisimPerson person, int day);
+	void updateState(MutableEpisimPerson person, int day);
 
 	/**
 	 * Called before all state updates for all persons have been done.
 	 */
-	default void beforeStateUpdates(Map<Id<Person>, EpisimPerson> persons, int day, EpisimReporting.InfectionReport report) {}
+	default void beforeStateUpdates(Map<Id<Person>, MutableEpisimPerson> persons, int day, EpisimReporting.InfectionReport report) {}
 
 	/**
 	 * Checks whether any state transitions are possible. Otherwise the simulation will end.

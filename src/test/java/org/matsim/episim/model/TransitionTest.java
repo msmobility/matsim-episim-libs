@@ -7,7 +7,7 @@ import org.assertj.core.api.Condition;
 import org.assertj.core.data.Index;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 
 import java.util.Objects;
 import java.util.SplittableRandom;

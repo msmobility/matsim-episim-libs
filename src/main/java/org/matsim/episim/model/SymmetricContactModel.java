@@ -28,7 +28,7 @@ import org.matsim.episim.*;
 
 import java.util.SplittableRandom;
 
-import static org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 
 /**
  * Variant of the {@link DefaultContactModel} with symmetric interactions.
@@ -63,16 +63,16 @@ public final class SymmetricContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(EpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
+	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
 		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
 	}
 
 	@Override
-	public void infectionDynamicsFacility(EpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
+	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
 		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
@@ -88,7 +88,7 @@ public final class SymmetricContactModel extends AbstractContactModel {
 
 		EpisimConfigGroup.InfectionParams leavingParams = null;
 
-		for (EpisimPerson contactPerson : container.getPersons()) {
+		for (MutableEpisimPerson contactPerson : container.getPersons()) {
 
 			// no contact with self, especially no tracing
 			if (personLeavingContainer == contactPerson) {

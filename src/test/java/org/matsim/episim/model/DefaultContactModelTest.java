@@ -9,6 +9,8 @@ import org.junit.Test;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.RestrictionTest;
 import org.mockito.Mockito;
@@ -61,15 +63,15 @@ public class DefaultContactModelTest {
 	 * @return sampled infection rate
 	 */
 	private double sampleInfectionRate(Duration jointTime, String actType, Supplier<InfectionEventHandler.EpisimFacility> f,
-									   Function<InfectionEventHandler.EpisimFacility, EpisimPerson> p) {
+									   Function<InfectionEventHandler.EpisimFacility, MutableEpisimPerson> p) {
 
 		int infections = 0;
 
 		for (int i = 0; i < 30_000; i++) {
 			InfectionEventHandler.EpisimFacility container = f.get();
-			EpisimPerson person = p.apply(container);
+			MutableEpisimPerson person = p.apply(container);
 			model.infectionDynamicsFacility(person, container, jointTime.getSeconds(), actType);
-			if (person.getDiseaseStatus() == EpisimPerson.DiseaseStatus.infectedButNotContagious)
+			if (person.getDiseaseStatus() == DiseaseStatus.infectedButNotContagious)
 				infections++;
 		}
 
@@ -89,16 +91,16 @@ public class DefaultContactModelTest {
 
 		for (int i = 0; i < n; i++) {
 			InfectionEventHandler.EpisimFacility container = f.get();
-			List<EpisimPerson> allPersons = Lists.newArrayList(container.getPersons());
+			List<MutableEpisimPerson> allPersons = Lists.newArrayList(container.getPersons());
 
 			while (!container.getPersons().isEmpty()) {
-				EpisimPerson person = container.getPersons().get(r.nextInt(container.getPersons().size()));
+				MutableEpisimPerson person = container.getPersons().get(r.nextInt(container.getPersons().size()));
 				model.infectionDynamicsFacility(person, container, jointTime.getSeconds(), actType);
 				EpisimTestUtils.removePerson(container, person);
 			}
 
 			// Percentage of infected persons
-			rate += (double) allPersons.stream().filter(p -> p.getDiseaseStatus() == EpisimPerson.DiseaseStatus.infectedButNotContagious).count() / allPersons.size();
+			rate += (double) allPersons.stream().filter(p -> p.getDiseaseStatus() == DiseaseStatus.infectedButNotContagious).count() / allPersons.size();
 		}
 
 		return rate / n;
@@ -144,13 +146,13 @@ public class DefaultContactModelTest {
 		double now = 0d;
 
 		double rate = sampleInfectionRate(Duration.ofHours(2), "c10",
-				() -> EpisimTestUtils.createFacility(5, "c10", p -> p.setDiseaseStatus(now, EpisimPerson.DiseaseStatus.infectedButNotContagious)),
+				() -> EpisimTestUtils.createFacility(5, "c10", p -> p.setDiseaseStatus(now, DiseaseStatus.infectedButNotContagious)),
 				(f) -> EpisimTestUtils.createPerson("c10", f)
 		);
 		assertThat(rate).isCloseTo(0, OFFSET);
 
 		rate = sampleInfectionRate(Duration.ofHours(2), "c10",
-				() -> EpisimTestUtils.createFacility(5, "c10", p -> p.setDiseaseStatus(now, EpisimPerson.DiseaseStatus.recovered)),
+				() -> EpisimTestUtils.createFacility(5, "c10", p -> p.setDiseaseStatus(now, DiseaseStatus.recovered)),
 				(f) -> EpisimTestUtils.createPerson("c10", f)
 		);
 		assertThat(rate).isCloseTo(0, OFFSET);
@@ -251,9 +253,9 @@ public class DefaultContactModelTest {
 	@Test
 	public void homeQuarantineContact() {
 
-		Function<InfectionEventHandler.EpisimFacility, EpisimPerson> createPerson = (f) -> {
-			EpisimPerson p = EpisimTestUtils.createPerson("home", f);
-			p.setQuarantineStatus(EpisimPerson.QuarantineStatus.atHome, 0);
+		Function<InfectionEventHandler.EpisimFacility, MutableEpisimPerson> createPerson = (f) -> {
+			MutableEpisimPerson p = EpisimTestUtils.createPerson("home", f);
+			p.setQuarantineStatus(QuarantineStatus.atHome, 0);
 			return p;
 		};
 
@@ -321,8 +323,8 @@ public class DefaultContactModelTest {
 			EpisimTestUtils.addPersons(f, 1, "leis", (p) -> { });
 			EpisimTestUtils.addPersons(f, 1, "work", (p) -> { });
 			EpisimTestUtils.addPersons(f, 1, "home", (p) -> { });
-			EpisimTestUtils.addPersons(f, 3, "leis", (p) -> p.setDiseaseStatus(0, EpisimPerson.DiseaseStatus.recovered));
-			EpisimTestUtils.addPersons(f, 3, "leis", (p) -> p.setDiseaseStatus(0, EpisimPerson.DiseaseStatus.infectedButNotContagious));
+			EpisimTestUtils.addPersons(f, 3, "leis", (p) -> p.setDiseaseStatus(0, DiseaseStatus.recovered));
+			EpisimTestUtils.addPersons(f, 3, "leis", (p) -> p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious));
 			return f;
 		};
 
@@ -356,8 +358,8 @@ public class DefaultContactModelTest {
 		assertThat(noTracking)
 				// Compares arguments of the calls [person1, person2, time, activity]
 				.usingElementComparator((o1, o2) -> {
-					EpisimPerson p1 = (EpisimPerson) o1[0];
-					EpisimPerson p2 = (EpisimPerson) o2[0];
+					MutableEpisimPerson p1 = (MutableEpisimPerson) o1[0];
+					MutableEpisimPerson p2 = (MutableEpisimPerson) o2[0];
 
 					boolean same = p1.getPersonId().equals(p2.getPersonId());
 					if (!same) return -1;

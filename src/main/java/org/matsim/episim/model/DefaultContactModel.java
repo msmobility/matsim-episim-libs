@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SplittableRandom;
 
-import static org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 
 /**
  * Default contact model executed, when a person ends his activity.
@@ -49,7 +49,7 @@ public final class DefaultContactModel extends AbstractContactModel {
 	/**
 	 * In order to avoid recreating a the list of other persons in the container every time it is stored as instance variable.
 	 */
-	private final List<EpisimPerson> otherPersonsInContainer = new ArrayList<>();
+	private final List<MutableEpisimPerson> otherPersonsInContainer = new ArrayList<>();
 	/**
 	 * This buffer is used to store the infection type.
 	 */
@@ -65,16 +65,16 @@ public final class DefaultContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(EpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
+	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
 		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
 	}
 
 	@Override
-	public void infectionDynamicsFacility(EpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
+	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
 		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
@@ -106,7 +106,7 @@ public final class DefaultContactModel extends AbstractContactModel {
 			//  depend on the density), and then a probability of infection in either direction.
 
 			// Draw the contact person and remove it -> we don't want to draw it multiple times
-			EpisimPerson contactPerson = otherPersonsInContainer.remove(rnd.nextInt(otherPersonsInContainer.size()));
+			MutableEpisimPerson contactPerson = otherPersonsInContainer.remove(rnd.nextInt(otherPersonsInContainer.size()));
 
 
 			if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, container, getRestrictions(), rnd)) {

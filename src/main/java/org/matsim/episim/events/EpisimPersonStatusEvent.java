@@ -24,7 +24,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.internal.HasPersonId;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 
 import java.util.Map;
 
@@ -37,13 +38,13 @@ public final class EpisimPersonStatusEvent extends Event implements HasPersonId 
 	private static final String QUARANTINE_STATUS = "quarantineStatus";
 
 	private final Id<Person> personId;
-	private final EpisimPerson.DiseaseStatus diseaseStatus;
-	private final EpisimPerson.QuarantineStatus quarantineStatus;
+	private final DiseaseStatus diseaseStatus;
+	private final QuarantineStatus quarantineStatus;
 
 	/**
 	 * Constructor for disease status.
 	 */
-	public EpisimPersonStatusEvent(double time, Id<Person> personId, EpisimPerson.DiseaseStatus diseaseStatus) {
+	public EpisimPersonStatusEvent(double time, Id<Person> personId, DiseaseStatus diseaseStatus) {
 		super(time);
 		this.diseaseStatus = diseaseStatus;
 		this.quarantineStatus = null;
@@ -53,7 +54,7 @@ public final class EpisimPersonStatusEvent extends Event implements HasPersonId 
 	/**
 	 * Constructor for quarantine status.
 	 */
-	public EpisimPersonStatusEvent(double time, Id<Person> personId, EpisimPerson.QuarantineStatus quarantineStatus) {
+	public EpisimPersonStatusEvent(double time, Id<Person> personId, QuarantineStatus quarantineStatus) {
 		super(time);
 		this.diseaseStatus = null;
 		this.quarantineStatus = quarantineStatus;
@@ -70,7 +71,7 @@ public final class EpisimPersonStatusEvent extends Event implements HasPersonId 
 		return personId;
 	}
 
-	public EpisimPerson.DiseaseStatus getDiseaseStatus() {
+	public DiseaseStatus getDiseaseStatus() {
 		return diseaseStatus;
 	}
 

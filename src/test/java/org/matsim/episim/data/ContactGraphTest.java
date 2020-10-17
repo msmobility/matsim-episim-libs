@@ -3,6 +3,8 @@ package org.matsim.episim.data;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.junit.Test;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
@@ -27,12 +29,12 @@ public class ContactGraphTest {
 			new ArrayList<>(ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class).getInfectionParams());
 
 	private static final Int2ObjectMap<EpisimContainer> container = new Int2ObjectArrayMap<>();
-	private static final Int2ObjectMap<EpisimPerson> persons = new Int2ObjectArrayMap<>();
+	private static final Int2ObjectMap<Id<Person>> persons = new Int2ObjectArrayMap<>();
 
 	static {
 		for (int i = 0; i < 5; i++) {
 			EpisimPerson p = EpisimTestUtils.createPerson(null);
-			persons.put(p.getId().index(), p);
+			persons.put(p.getId().index(), p.getId());
 			EpisimContainer c = EpisimTestUtils.createFacility();
 			container.put(c.getId().index(), c);
 		}
@@ -67,7 +69,7 @@ public class ContactGraphTest {
 		Iterator<PersonLeavesContainerEvent> it = g.iterator();
 		PersonLeavesContainerEvent ev = it.next();
 
-		assertThat(ev.getPerson()).isEqualTo(persons.get(0));
+		assertThat(ev.getPersonId()).isEqualTo(persons.get(0));
 		assertThat(ev.getContainer()).isEqualTo(container.get(1));
 		assertThat(ev.getActivity()).isEqualTo(infectionParams.get(0));
 		assertThat(ev.getLeaveTime()).isEqualTo(1000);
@@ -78,7 +80,7 @@ public class ContactGraphTest {
 
 		ev = it.next();
 
-		assertThat(ev.getPerson()).isEqualTo(persons.get(1));
+		assertThat(ev.getPersonId()).isEqualTo(persons.get(1));
 		assertThat(ev.getContainer()).isEqualTo(container.get(2));
 		assertThat(ev.getLeaveTime()).isEqualTo(5000);
 

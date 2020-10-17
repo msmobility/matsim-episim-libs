@@ -2,7 +2,6 @@ package org.matsim.run.batch;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
-import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
@@ -121,14 +120,14 @@ public class KNBatch implements BatchRun<KNBatch.Params> {
 		@Override public void setIteration( int day ){
 			delegate.setIteration( day );
 		}
-		@Override public void updateState( EpisimPerson person, int day ){
+		@Override public void updateState(MutableEpisimPerson person, int day ){
 			delegate.updateState( person, day );
 		}
 		@Override public boolean canProgress( EpisimReporting.InfectionReport report ){
 //			return report.nTotalInfected > 0 || report.nInQuarantine > 0;
 			return report.nInfectedButNotContagious + report.nContagious + report.nShowingSymptoms > 0 ;
 		}
-		@Override public void beforeStateUpdates( Map<Id<Person>, EpisimPerson> persons, int day, EpisimReporting.InfectionReport report ){
+		@Override public void beforeStateUpdates(Map<Id<Person>, MutableEpisimPerson> persons, int day, EpisimReporting.InfectionReport report ){
 			delegate.beforeStateUpdates( persons, day, report );
 		}
 	}

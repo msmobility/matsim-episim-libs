@@ -37,9 +37,10 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.ReplayHandler;
 import org.matsim.episim.TracingConfigGroup;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.model.*;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.facilities.ActivityFacility;
@@ -212,7 +213,7 @@ public class SyntheticScenario extends AbstractModule {
 		}
 
 		@Override
-		public void handleInfections(Map<Id<Person>, EpisimPerson> persons, int iteration) {
+		public void handleInfections(Map<Id<Person>, MutableEpisimPerson> persons, int iteration) {
 
 			if (iteration != 1) return;
 
@@ -221,8 +222,8 @@ public class SyntheticScenario extends AbstractModule {
 
 				for (int i = 0; i < this.n; i++) {
 					Id<Person> p = it.next();
-					EpisimPerson person = persons.get(p);
-					person.setDiseaseStatus(0, EpisimPerson.DiseaseStatus.infectedButNotContagious);
+					MutableEpisimPerson person = persons.get(p);
+					person.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 				}
 			}
 

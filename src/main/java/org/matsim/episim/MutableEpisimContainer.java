@@ -55,7 +55,7 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	/**
 	 * Person list needed to draw random persons within container.
 	 */
-	private final List<EpisimPerson> personsAsList = new ArrayList<>();
+	private final List<MutableEpisimPerson> personsAsList = new ArrayList<>();
 
 	private final Int2DoubleMap containerEnterTimes = new Int2DoubleOpenHashMap(4);
 
@@ -87,7 +87,7 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	/**
 	 * Reads containers state from stream.
 	 */
-	void read(ObjectInput in, Map<Id<Person>, EpisimPerson> persons) throws IOException {
+	void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons) throws IOException {
 
 		this.persons.clear();
 		this.personsAsList.clear();
@@ -108,13 +108,13 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	void write(ObjectOutput out) throws IOException {
 
 		out.writeInt(containerEnterTimes.size());
-		for (EpisimPerson p : personsAsList) {
+		for (MutableEpisimPerson p : personsAsList) {
 			writeChars(out, p.getPersonId().toString());
 			out.writeDouble(containerEnterTimes.get(p.getPersonId().index()));
 		}
 	}
 
-	void addPerson(EpisimPerson person, double now) {
+	void addPerson(MutableEpisimPerson person, double now) {
 		final int index = person.getPersonId().index();
 
 		if (persons.contains(index))
@@ -131,7 +131,7 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	 *
 	 * @throws RuntimeException if the person was not in the container.
 	 */
-	void removePerson(EpisimPerson person) {
+	void removePerson(MutableEpisimPerson person) {
 		int index = person.getPersonId().index();
 
 		containerEnterTimes.remove(index);
@@ -145,6 +145,12 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	public Id<EpisimContainer> getId() {
 		// TODO: stub implementation
 		return Id.create(containerId.toString(), EpisimContainer.class);
+	}
+
+	@Override
+	public boolean isVehicle() {
+		// TODO: fixing this
+		return this instanceof InfectionEventHandler.EpisimVehicle;
 	}
 
 	public Id<T> getContainerId() {
@@ -212,7 +218,7 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 		return containerEnterTimes.getOrDefault(personId.index(), Double.NEGATIVE_INFINITY);
 	}
 
-	public List<EpisimPerson> getPersons() {
+	public List<MutableEpisimPerson> getPersons() {
 		// Using Collections.unmodifiableList(...) puts huge pressure on the GC if its called hundred thousand times per second
 		return personsAsList;
 	}

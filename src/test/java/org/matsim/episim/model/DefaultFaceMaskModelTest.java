@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.EpisimTestUtils;
 import org.matsim.episim.policy.Restriction;
 
@@ -28,7 +28,7 @@ public class DefaultFaceMaskModelTest {
 	private double sample(Restriction r, FaceMask type) {
 		double worn = 0;
 		for (int i = 0; i < 30_000; i++) {
-			EpisimPerson p = EpisimTestUtils.createPerson("work", null);
+			MutableEpisimPerson p = EpisimTestUtils.createPerson("work", null);
 			FaceMask mask = model.getWornMask(p, config.selectInfectionParams("work"),  r);
 			if (mask == type) worn++;
 		}

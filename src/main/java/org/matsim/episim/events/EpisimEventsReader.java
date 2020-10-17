@@ -28,7 +28,7 @@ import org.matsim.core.events.EventsReaderXMLv1;
 import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.utils.io.MatsimXmlParser;
 import org.matsim.episim.MutableEpisimContainer;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.facilities.ActivityFacility;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

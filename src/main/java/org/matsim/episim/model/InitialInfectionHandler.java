@@ -2,7 +2,7 @@ package org.matsim.episim.model;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 
 import java.util.Map;
 
@@ -14,7 +14,7 @@ public interface InitialInfectionHandler {
 	/**
 	 * Called at the start of every iteration. This class should set the disease state of persons as necessary.
 	 */
-	void handleInfections(Map<Id<Person>, EpisimPerson> persons, int iteration);
+	void handleInfections(Map<Id<Person>, MutableEpisimPerson> persons, int iteration);
 
 	/**
 	 * Number of initial infections left that will also be persisted. Might be relevant for certain models to stop disease import.

@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.policy.Restriction;
 
 import java.util.Map;
@@ -28,8 +28,8 @@ public final class DefaultInfectionModel implements InfectionModel {
 
 
 	@Override
-	public double calcInfectionProbability(EpisimPerson target, EpisimPerson infector, Map<String, Restriction> restrictions,
-										   EpisimConfigGroup.InfectionParams act1, EpisimConfigGroup.InfectionParams act2, double jointTimeInContainer) {
+	public double calcInfectionProbability(MutableEpisimPerson target, MutableEpisimPerson infector, Map<String, Restriction> restrictions,
+                                           EpisimConfigGroup.InfectionParams act1, EpisimConfigGroup.InfectionParams act2, double jointTimeInContainer) {
 
 		// ci corr can not be null, because sim is initialized with non null value
 		double ciCorrection = Math.min(restrictions.get(act1.getContainerName()).getCiCorrection(), restrictions.get(act2.getContainerName()).getCiCorrection());

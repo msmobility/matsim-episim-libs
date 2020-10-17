@@ -21,7 +21,7 @@
 package org.matsim.episim.model;
 
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimPerson;
+import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.TracingConfigGroup;
 
 import com.google.inject.Inject;
@@ -42,7 +42,7 @@ public final class AgeDependentProgressionModel extends ConfigurableProgressionM
 	}
 
 	@Override
-	protected double getProbaOfTransitioningToSeriouslySick(EpisimPerson person) {
+	protected double getProbaOfTransitioningToSeriouslySick(MutableEpisimPerson person) {
 
 		double proba = -1;
 
@@ -89,7 +89,7 @@ public final class AgeDependentProgressionModel extends ConfigurableProgressionM
 	}
 
 	@Override
-	protected double getProbaOfTransitioningToCritical(EpisimPerson person) {
+	protected double getProbaOfTransitioningToCritical(MutableEpisimPerson person) {
 		double proba = -1;
 
 		int age = -1;

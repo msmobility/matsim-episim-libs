@@ -1,6 +1,5 @@
 package org.matsim.episim.data;
 
-
 /**
  * Disease status of a person.
  */

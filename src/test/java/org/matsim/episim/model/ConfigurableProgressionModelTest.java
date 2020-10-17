@@ -7,7 +7,8 @@ import org.assertj.core.data.Percentage;
 import org.junit.Before;
 import org.junit.Test;
 import org.matsim.episim.*;
-import org.matsim.episim.EpisimPerson.DiseaseStatus;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,22 +21,22 @@ import static org.mockito.Mockito.mock;
 public class ConfigurableProgressionModelTest {
 
 	private static final Config TEST_CONFIG = Transition.config()
-			.from(EpisimPerson.DiseaseStatus.infectedButNotContagious,
-					to(EpisimPerson.DiseaseStatus.contagious, Transition.fixed(4)))
+			.from(DiseaseStatus.infectedButNotContagious,
+					to(DiseaseStatus.contagious, Transition.fixed(4)))
 
-			.from(EpisimPerson.DiseaseStatus.contagious,
-					to(EpisimPerson.DiseaseStatus.showingSymptoms, Transition.fixed(2)),
-					to(EpisimPerson.DiseaseStatus.recovered, Transition.fixed(12)))
+			.from(DiseaseStatus.contagious,
+					to(DiseaseStatus.showingSymptoms, Transition.fixed(2)),
+					to(DiseaseStatus.recovered, Transition.fixed(12)))
 
-			.from(EpisimPerson.DiseaseStatus.showingSymptoms,
-					to(EpisimPerson.DiseaseStatus.seriouslySick, Transition.fixed(4)),
-					to(EpisimPerson.DiseaseStatus.recovered, Transition.fixed(10)))
+			.from(DiseaseStatus.showingSymptoms,
+					to(DiseaseStatus.seriouslySick, Transition.fixed(4)),
+					to(DiseaseStatus.recovered, Transition.fixed(10)))
 
-			.from(EpisimPerson.DiseaseStatus.seriouslySick,
-					to(EpisimPerson.DiseaseStatus.critical, Transition.fixed(1)),
-					to(EpisimPerson.DiseaseStatus.recovered, Transition.fixed(13)))
+			.from(DiseaseStatus.seriouslySick,
+					to(DiseaseStatus.critical, Transition.fixed(1)),
+					to(DiseaseStatus.recovered, Transition.fixed(13)))
 
-			.from(EpisimPerson.DiseaseStatus.critical,
+			.from(DiseaseStatus.critical,
 					to(DiseaseStatus.seriouslySickAfterCritical, Transition.fixed(9)))
 
 			.from(DiseaseStatus.seriouslySickAfterCritical,
@@ -68,7 +69,7 @@ public class ConfigurableProgressionModelTest {
 
 		model.setIteration(1);
 
-		EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 		p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 		for (int day = 0; day <= 5; day++) {
 			model.updateState(p, day);
@@ -77,7 +78,7 @@ public class ConfigurableProgressionModelTest {
 		p.addTraceableContactPerson(EpisimTestUtils.createPerson(reporting), 5 * 24 * 3600);
 
 		model.updateState(p, 6);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.atHome);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.atHome);
 	}
 
 	@Test
@@ -93,10 +94,10 @@ public class ConfigurableProgressionModelTest {
 
 		model.setIteration(1);
 
-		List<EpisimPerson> persons = new ArrayList<>();
+		List<MutableEpisimPerson> persons = new ArrayList<>();
 
 		for (int i = 0; i < 1000; i++) {
-			EpisimPerson p = EpisimTestUtils.createPerson("home", null);
+			MutableEpisimPerson p = EpisimTestUtils.createPerson("home", null);
 			p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 			persons.add(p);
 		}
@@ -117,15 +118,15 @@ public class ConfigurableProgressionModelTest {
 		// because only 80% are showing symptoms, on average the first 625 persons can be traced
 		for (int i = 0; i < 1000; i++) {
 
-			EpisimPerson p = persons.get(i);
+			MutableEpisimPerson p = persons.get(i);
 			if (i < 600 && p.getDiseaseStatus() == DiseaseStatus.showingSymptoms)
 				assertThat(p.getTraceableContactPersons(0))
 						.describedAs("Person %d with status %s", i, p.getDiseaseStatus())
-						.allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.atHome);
+						.allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.atHome);
 			else if (i >= 625)
 				assertThat(p.getTraceableContactPersons(0))
 						.describedAs("Person %d", i)
-						.allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no);
+						.allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.no);
 
 		}
 	}
@@ -137,7 +138,7 @@ public class ConfigurableProgressionModelTest {
 		tracingConfig.setPutTraceablePersonsInQuarantineAfterDay(0);
 		tracingConfig.setTracingDelay_days(2 );
 
-		EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 		p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 		for (int day = 0; day <= 5; day++) {
 			model.updateState(p, day);
@@ -146,15 +147,15 @@ public class ConfigurableProgressionModelTest {
 		p.addTraceableContactPerson(EpisimTestUtils.createPerson(reporting), 5 * 24 * 3600);
 
 		model.updateState(p, 6);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.no);
 
 
 		model.updateState(p, 7);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.no);
 
 
 		model.updateState(p, 8);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.atHome);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.atHome);
 
 	}
 
@@ -165,14 +166,14 @@ public class ConfigurableProgressionModelTest {
 		tracingConfig.setTracingDelay_days(2 );
 		tracingConfig.setTracingPeriod_days(1 );
 
-		EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 		p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 		for (int day = 0; day <= 5; day++) {
 			model.updateState(p, day);
 		}
 
-		EpisimPerson first = EpisimTestUtils.createPerson(reporting);
-		EpisimPerson last = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson first = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson last = EpisimTestUtils.createPerson(reporting);
 
 		p.addTraceableContactPerson(first, 4 * 24 * 3600);
 		p.addTraceableContactPerson(last, 5 * 24 * 3600);
@@ -182,8 +183,8 @@ public class ConfigurableProgressionModelTest {
 		model.updateState(p, 8);
 
 
-		assertThat(first.getQuarantineStatus()).isEqualTo(EpisimPerson.QuarantineStatus.no);
-		assertThat(last.getQuarantineStatus()).isEqualTo(EpisimPerson.QuarantineStatus.atHome);
+		assertThat(first.getQuarantineStatus()).isEqualTo(QuarantineStatus.no);
+		assertThat(last.getQuarantineStatus()).isEqualTo(QuarantineStatus.atHome);
 
 	}
 
@@ -198,7 +199,7 @@ public class ConfigurableProgressionModelTest {
 		// needed to update probability
 		model.setIteration(1);
 
-		EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 		p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 		for (int day = 0; day <= 5; day++) {
 			model.updateState(p, day);
@@ -206,13 +207,13 @@ public class ConfigurableProgressionModelTest {
 
 		p.getAttributes().putAttribute("homeId", "1");
 
-		EpisimPerson contact = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson contact = EpisimTestUtils.createPerson(reporting);
 		contact.getAttributes().putAttribute("homeId", "1");
 
 		p.addTraceableContactPerson(contact, 5 * 24 * 3600);
 
 		model.updateState(p, 6);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.no);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.no);
 
 		// person is traced one day later when activated
 
@@ -220,7 +221,7 @@ public class ConfigurableProgressionModelTest {
 		tracingConfig.setTracingDelay_days(1 );
 
 		model.updateState(p, 7);
-		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == EpisimPerson.QuarantineStatus.atHome);
+		assertThat(p.getTraceableContactPersons(0)).allMatch(t -> t.getQuarantineStatus() == QuarantineStatus.atHome);
 
 
 	}
@@ -229,7 +230,7 @@ public class ConfigurableProgressionModelTest {
 	public void defaultTransition() {
 
 		// Depends on random seed
-		EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+		MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 		p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 		for (int day = 0; day <= 16; day++) {
 			model.updateState(p, day);
@@ -250,7 +251,7 @@ public class ConfigurableProgressionModelTest {
 		int showSymptoms = 0;
 		for (int i = 0; i < 10_000; i++) {
 
-			EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+			MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 			p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 
 			for (int day = 0; day <= 6; day++) {
@@ -297,7 +298,7 @@ public class ConfigurableProgressionModelTest {
 
 		for (int i = 0; i < 10_000; i++) {
 
-			EpisimPerson p = EpisimTestUtils.createPerson(reporting);
+			MutableEpisimPerson p = EpisimTestUtils.createPerson(reporting);
 			p.setDiseaseStatus(0, DiseaseStatus.infectedButNotContagious);
 
 			int toDay = 40;
