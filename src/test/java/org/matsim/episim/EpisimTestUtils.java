@@ -91,7 +91,7 @@ public class EpisimTestUtils {
 	/**
 	 * Create a person and add to container.
 	 */
-	public static EpisimPerson createPerson(String currentAct, @Nullable EpisimContainer<?> container) {
+	public static EpisimPerson createPerson(String currentAct, @Nullable MutableEpisimContainer<?> container) {
 		EpisimPerson p = new EpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
 
 		p.getTrajectory().add(new EpisimPerson.Activity(currentAct, TEST_CONFIG.selectInfectionParams(currentAct)));
@@ -126,7 +126,7 @@ public class EpisimTestUtils {
 	/**
 	 * Remove person from container.
 	 */
-	public static void removePerson(EpisimContainer<?> container, EpisimPerson p) {
+	public static void removePerson(MutableEpisimContainer<?> container, EpisimPerson p) {
 		container.removePerson(p);
 	}
 

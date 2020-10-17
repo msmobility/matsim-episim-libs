@@ -353,11 +353,11 @@ public class KnRunEpisim {
 
 	}
 
-	public static void writeGroupSizes( Object2IntMap<EpisimContainer<?>> maxGroupSize ){
+	public static void writeGroupSizes( Object2IntMap<MutableEpisimContainer<?>> maxGroupSize ){
 		{
 			List<Long> cnts = new ArrayList<>();
-			for( Object2IntMap.Entry<EpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
-				EpisimContainer<?> container = entry.getKey();
+			for( Object2IntMap.Entry<MutableEpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
+				MutableEpisimContainer<?> container = entry.getKey();
 				if( !(container instanceof InfectionEventHandler.EpisimFacility) ){
 					continue;
 				}
@@ -377,8 +377,8 @@ public class KnRunEpisim {
 		}
 		{
 			List<Long> cnts = new ArrayList<>();
-			for( Object2IntMap.Entry<EpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
-				EpisimContainer<?> container = entry.getKey();
+			for( Object2IntMap.Entry<MutableEpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
+				MutableEpisimContainer<?> container = entry.getKey();
 				if( !(container instanceof InfectionEventHandler.EpisimVehicle) ){
 					continue;
 				}

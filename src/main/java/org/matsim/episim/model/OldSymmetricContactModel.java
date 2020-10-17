@@ -75,7 +75,7 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, EpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {

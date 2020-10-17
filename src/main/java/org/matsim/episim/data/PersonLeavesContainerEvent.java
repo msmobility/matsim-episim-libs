@@ -14,19 +14,19 @@ import java.util.List;
 public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<PersonContact> {
 
 	/**
-	 * Id of the leaving person.
+	 * Person leaving the container.
 	 */
-	Id<Person> getPersonId();
+	EpisimPerson getPerson();
+
+	@Override
+	default Id<Person> getPersonId() {
+		return getPerson().getId();
+	}
 
 	/**
 	 * Id of the container left.
 	 */
-	Id<EpisimContainer> getContainerId();
-
-	/**
-	 * Whether this container is a vehicle.
-	 */
-	boolean isInVehicle();
+	EpisimContainer getContainer();
 
 	/**
 	 * Activity this person performed.
@@ -51,10 +51,10 @@ public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<Person
 	/**
 	 * Creates a new instances of a person leave event.
 	 */
-	static PersonLeavesContainerEvent newInstance(Id<Person> personId, Id<EpisimContainer> containerId,
-												  boolean isVehicle, EpisimConfigGroup.InfectionParams param,
+	static PersonLeavesContainerEvent newInstance(EpisimPerson person, EpisimContainer container,
+												  EpisimConfigGroup.InfectionParams param,
 												  int leaveTime, int enterTime, List<PersonContact> contacts) {
-		return new PersonLeavesContainerEventImpl(personId, containerId, isVehicle, param, leaveTime, enterTime, contacts);
+		return new PersonLeavesContainerEventImpl(person, container, param, leaveTime, enterTime, contacts);
 	}
 
 }

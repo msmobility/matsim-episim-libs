@@ -26,6 +26,8 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributable;
@@ -48,7 +50,7 @@ import static org.matsim.episim.EpisimUtils.writeChars;
 /**
  * Persons current state in the simulation.
  */
-public final class EpisimPerson implements Attributable {
+public final class EpisimPerson implements org.matsim.episim.data.EpisimPerson, Attributable {
 
 	private final Id<Person> personId;
 	private final EpisimReporting reporting;
@@ -93,9 +95,9 @@ public final class EpisimPerson implements Attributable {
 	private final Object2DoubleMap<String> spentTime = new Object2DoubleOpenHashMap<>(4);
 
 	/**
-	 * The {@link EpisimContainer} the person is currently located in.
+	 * The {@link MutableEpisimContainer} the person is currently located in.
 	 */
-	private EpisimContainer<?> currentContainer = null;
+	private MutableEpisimContainer<?> currentContainer = null;
 
 	/**
 	 * The facility where the person got infected. Can be null if person was initially infected.
@@ -248,6 +250,11 @@ public final class EpisimPerson implements Attributable {
 		return personId;
 	}
 
+	@Override
+	public Id<Person> getId() {
+		return personId;
+	}
+
 	public DiseaseStatus getDiseaseStatus() {
 		return status;
 	}
@@ -311,10 +318,6 @@ public final class EpisimPerson implements Attributable {
 		if (quarantineDate < 0) throw new IllegalStateException("Person was never quarantined");
 
 		return currentDay - quarantineDate;
-	}
-
-	int getQuarantineDate() {
-		return this.quarantineDate;
 	}
 
 	public void addTraceableContactPerson(EpisimPerson personWrapper, double now) {
@@ -408,15 +411,15 @@ public final class EpisimPerson implements Attributable {
 		firstFacilityId[target.getValue() - 1] = firstFacilityId[source.getValue() - 1];
 	}
 
-	public EpisimContainer<?> getCurrentContainer() {
+	public MutableEpisimContainer<?> getCurrentContainer() {
 		return currentContainer;
 	}
 
 	/**
-	 * Set the container the person is currently contained in. {@link #removeCurrentContainer(EpisimContainer)} must be called before a new
+	 * Set the container the person is currently contained in. {@link #removeCurrentContainer(MutableEpisimContainer)} must be called before a new
 	 * container can be set.
 	 */
-	public void setCurrentContainer(EpisimContainer<?> container) {
+	public void setCurrentContainer(MutableEpisimContainer<?> container) {
 		if (this.currentContainer != null)
 			throw new IllegalStateException(String.format("Person in more than one container at once. Person=%s in %s and %s",
 					this.getPersonId(), container.getContainerId(), this.currentContainer.getContainerId()));
@@ -437,7 +440,7 @@ public final class EpisimPerson implements Attributable {
 		return currentContainer != null;
 	}
 
-	public void removeCurrentContainer(EpisimContainer<?> container) {
+	public void removeCurrentContainer(MutableEpisimContainer<?> container) {
 		if (this.currentContainer != container)
 			throw new IllegalStateException(String.format("Person is currently in %s, but not in removed one %s", currentContainer, container));
 
@@ -452,7 +455,7 @@ public final class EpisimPerson implements Attributable {
 		this.firstFacilityId[day.getValue() - 1] = firstFacilityId;
 	}
 
-	public void setInfectionContainer(EpisimContainer<?> container) {
+	public void setInfectionContainer(MutableEpisimContainer<?> container) {
 		this.infectionContainer = (Id<ActivityFacility>) container.getContainerId();
 	}
 

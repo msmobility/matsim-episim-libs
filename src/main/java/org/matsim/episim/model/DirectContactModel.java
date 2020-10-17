@@ -55,8 +55,8 @@ public final class DirectContactModel extends AbstractContactModel {
 	 */
 	private final StringBuilder buffer = new StringBuilder();
 
-	private final Map<EpisimContainer<?>, EpisimPerson> singlePersons = new IdentityHashMap<>();
-	private final Map<EpisimContainer<?>, List<Group>> groups = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer<?>, EpisimPerson> singlePersons = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer<?>, List<Group>> groups = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ DirectContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -86,7 +86,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
 	}
 
-	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, EpisimContainer<?> container, double now) {
+	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
 
 		// this can happen because persons are not removed during initialization
 		if (findGroup(container, personEnteringContainer) != null)
@@ -102,7 +102,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		}
 	}
 
-	private Group findGroup(EpisimContainer<?> container, EpisimPerson person) {
+	private Group findGroup(MutableEpisimContainer<?> container, EpisimPerson person) {
 
 		if (!groups.containsKey(container))
 			return null;
@@ -116,7 +116,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		return null;
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, EpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 			removePersonFromGroups(container, personLeavingContainer, now);
@@ -241,7 +241,7 @@ public final class DirectContactModel extends AbstractContactModel {
 	 *
 	 * @return contact person if person was in group.
 	 */
-	private Pair<EpisimPerson, Double> removePersonFromGroups(EpisimContainer<?> container, EpisimPerson personLeavingContainer, double time) {
+	private Pair<EpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer<?> container, EpisimPerson personLeavingContainer, double time) {
 		if (singlePersons.get(container) == personLeavingContainer) {
 			singlePersons.remove(container);
 			return null;

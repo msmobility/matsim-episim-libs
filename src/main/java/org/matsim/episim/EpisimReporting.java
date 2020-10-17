@@ -354,7 +354,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 * @param infector      infector
 	 * @param infectionType activities of both persons
 	 */
-	public void reportInfection(EpisimPerson personWrapper, EpisimPerson infector, double now, String infectionType, EpisimContainer<?> container) {
+	public void reportInfection(EpisimPerson personWrapper, EpisimPerson infector, double now, String infectionType, MutableEpisimContainer<?> container) {
 
 		int cnt = specificInfectionsCnt.getOpaque();
 		// This counter is used by many threads, for better performance we use very weak memory guarantees here
@@ -386,7 +386,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 *
 	 * @see EpisimContactEvent
 	 */
-	public void reportContact(double now, EpisimPerson person, EpisimPerson contactPerson, EpisimContainer<?> container,
+	public void reportContact(double now, EpisimPerson person, EpisimPerson contactPerson, MutableEpisimContainer<?> container,
 							  StringBuilder actType, double duration) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
@@ -463,12 +463,12 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		manager.processEvent(event);
 	}
 
-	public void reportContainerUsage(Object2IntMap<EpisimContainer<?>> maxGroupSize,
-									 Object2IntMap<EpisimContainer<?>> containerSize, Map<EpisimContainer<?>, Object2IntMap<String>> activityUsage) {
+	public void reportContainerUsage(Object2IntMap<MutableEpisimContainer<?>> maxGroupSize,
+                                     Object2IntMap<MutableEpisimContainer<?>> containerSize, Map<MutableEpisimContainer<?>, Object2IntMap<String>> activityUsage) {
 
 		BufferedWriter out = EpisimWriter.prepare(base + "containerUsage.txt.gz", "id", "types", "containerSize", "maxGroupSize");
 
-		for (Object2IntMap.Entry<EpisimContainer<?>> kv : maxGroupSize.object2IntEntrySet()) {
+		for (Object2IntMap.Entry<MutableEpisimContainer<?>> kv : maxGroupSize.object2IntEntrySet()) {
 
 			double scale = 1 / episimConfig.getSampleSize();
 

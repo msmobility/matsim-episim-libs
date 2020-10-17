@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.episim.data.EpisimContainer;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -43,7 +44,7 @@ import static org.matsim.episim.EpisimUtils.writeChars;
  *
  * @param <T> the type where the agents are located in, e.g {@link org.matsim.vehicles.Vehicle} or {@link org.matsim.facilities.Facility}.
  */
-public class EpisimContainer<T> {
+public class MutableEpisimContainer<T> implements EpisimContainer {
 	private final Id<T> containerId;
 
 	/**
@@ -79,7 +80,7 @@ public class EpisimContainer<T> {
 	 */
 	private double numSpaces = 1;
 
-	EpisimContainer(Id<T> containerId) {
+	MutableEpisimContainer(Id<T> containerId) {
 		this.containerId = containerId;
 	}
 
@@ -138,6 +139,12 @@ public class EpisimContainer<T> {
 		person.removeCurrentContainer(this);
 		boolean wasRemoved = personsAsList.remove(person);
 		Gbl.assertIf(wasRemoved);
+	}
+
+	@Override
+	public Id<EpisimContainer> getId() {
+		// TODO: stub implementation
+		return Id.create(containerId.toString(), EpisimContainer.class);
 	}
 
 	public Id<T> getContainerId() {

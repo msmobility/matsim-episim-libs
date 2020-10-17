@@ -1,12 +1,12 @@
 package org.matsim.episim.data;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.junit.Test;
-import org.matsim.api.core.v01.Id;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.EpisimTestUtils;
-import org.matsim.facilities.ActivityFacility;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,18 +26,31 @@ public class ContactGraphTest {
 	private List<EpisimConfigGroup.InfectionParams> infectionParams =
 			new ArrayList<>(ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class).getInfectionParams());
 
+	private static final Int2ObjectMap<EpisimContainer> container = new Int2ObjectArrayMap<>();
+	private static final Int2ObjectMap<EpisimPerson> persons = new Int2ObjectArrayMap<>();
+
+	static {
+		for (int i = 0; i < 5; i++) {
+			EpisimPerson p = EpisimTestUtils.createPerson(null);
+			persons.put(p.getId().index(), p);
+			EpisimContainer c = EpisimTestUtils.createFacility();
+			container.put(c.getId().index(), c);
+		}
+	}
+
 
 	@Test
 	public void create() {
-		ContactGraph graph = new ContactGraph(generateEvents(), infectionParams);
+		ContactGraph graph = new ContactGraph(generateEvents(), infectionParams, persons, container);
 
 		assertCorrectGraph(graph);
 	}
 
+
 	@Test
 	public void write() throws IOException {
 
-		ContactGraph graph = new ContactGraph(generateEvents(), infectionParams);
+		ContactGraph graph = new ContactGraph(generateEvents(), infectionParams, persons, container);
 
 		Path tmp = Files.createTempFile("graph", "bin");
 
@@ -45,7 +58,7 @@ public class ContactGraphTest {
 
 		InputStream in = Files.newInputStream(tmp);
 
-		ContactGraph g = new ContactGraph(in, infectionParams);
+		ContactGraph g = new ContactGraph(in, infectionParams, persons, container);
 
 		assertCorrectGraph(g);
 	}
@@ -54,9 +67,8 @@ public class ContactGraphTest {
 		Iterator<PersonLeavesContainerEvent> it = g.iterator();
 		PersonLeavesContainerEvent ev = it.next();
 
-		assertThat(ev.getPersonId()).isEqualTo(Id.createPersonId(1));
-		assertThat(ev.getContainerId()).isEqualTo(Id.create(2, EpisimContainer.class));
-		assertThat(ev.isInVehicle()).isTrue();
+		assertThat(ev.getPerson()).isEqualTo(persons.get(0));
+		assertThat(ev.getContainer()).isEqualTo(container.get(1));
 		assertThat(ev.getActivity()).isEqualTo(infectionParams.get(0));
 		assertThat(ev.getLeaveTime()).isEqualTo(1000);
 		assertThat(ev.getEnterTime()).isEqualTo(2000);
@@ -66,12 +78,15 @@ public class ContactGraphTest {
 
 		ev = it.next();
 
-		assertThat(ev.getPersonId()).isEqualTo(Id.createPersonId(2));
-		assertThat(ev.isInVehicle()).isFalse();
+		assertThat(ev.getPerson()).isEqualTo(persons.get(1));
+		assertThat(ev.getContainer()).isEqualTo(container.get(2));
 		assertThat(ev.getLeaveTime()).isEqualTo(5000);
 
 		assertThat(ev)
-				.hasSize(2);
+				.allMatch(p -> p.getContactPerson().equals(persons.get(4)) &&
+						p.getContactPersonActivity() == infectionParams.get(1) &&
+						p.getOffset() == 500 && p.getDuration() == 700)
+				.hasSize(1);
 
 		assertThat(it.hasNext()).isFalse();
 	}
@@ -79,21 +94,20 @@ public class ContactGraphTest {
 	private List<PersonLeavesContainerEvent> generateEvents() {
 		return List.of(
 				PersonLeavesContainerEvent.newInstance(
-						Id.createPersonId(1),
-						Id.create(2, EpisimContainer.class),
-						true,
+						persons.get(0),
+						container.get(1),
 						infectionParams.get(0),
 						1000,
 						2000,
 						List.of(
 								PersonContact.newInstance(
-										Id.createPersonId(4),
+										persons.get(3),
 										infectionParams.get(1),
 										100,
 										200
 								),
 								PersonContact.newInstance(
-										Id.createPersonId(5),
+										persons.get(2),
 										infectionParams.get(1),
 										300,
 										400
@@ -101,24 +115,17 @@ public class ContactGraphTest {
 						)
 				),
 				PersonLeavesContainerEvent.newInstance(
-						Id.createPersonId(2),
-						Id.create(3, EpisimContainer.class),
-						false,
+						persons.get(1),
+						container.get(2),
 						infectionParams.get(1),
 						5000,
 						7000,
 						List.of(
 								PersonContact.newInstance(
-										Id.createPersonId(6),
+										persons.get(4),
 										infectionParams.get(1),
 										500,
 										700
-								),
-								PersonContact.newInstance(
-										Id.createPersonId(7),
-										infectionParams.get(1),
-										800,
-										900
 								)
 						)
 				)

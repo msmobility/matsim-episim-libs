@@ -114,7 +114,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	 * Attention: In order to re-use the underlying object, this function returns a buffer.
 	 * Be aware that the old result will be overwritten, when the function is called multiple times.
 	 */
-	protected static StringBuilder getInfectionType(StringBuilder buffer, EpisimContainer<?> container, String leavingPersonsActivity,
+	protected static StringBuilder getInfectionType(StringBuilder buffer, MutableEpisimContainer<?> container, String leavingPersonsActivity,
 													String otherPersonsActivity) {
 		buffer.setLength(0);
 		if (container instanceof EpisimFacility) {
@@ -131,7 +131,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	/**
 	 * Get the relevant infection parameter based on container and activity and person.
 	 */
-	protected EpisimConfigGroup.InfectionParams getInfectionParams(EpisimContainer<?> container, EpisimPerson person, String activity) {
+	protected EpisimConfigGroup.InfectionParams getInfectionParams(MutableEpisimContainer<?> container, EpisimPerson person, String activity) {
 		if (container instanceof EpisimVehicle) {
 			return trParams.params;
 		} else if (container instanceof EpisimFacility) {
@@ -165,7 +165,7 @@ public abstract class AbstractContactModel implements ContactModel {
 		otherPerson.addTraceableContactPerson(personLeavingContainer, now);
 	}
 
-	private boolean activityRelevantForInfectionDynamics(EpisimPerson person, EpisimContainer<?> container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
+	private boolean activityRelevantForInfectionDynamics(EpisimPerson person, MutableEpisimContainer<?> container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
 		EpisimPerson.Activity act = person.getTrajectory().get(person.getCurrentPositionInTrajectory());
 
 		// Check if person is home quarantined
@@ -221,7 +221,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	 *
 	 * @noinspection BooleanMethodIsAlwaysInverted
 	 */
-	protected final boolean personRelevantForTrackingOrInfectionDynamics(EpisimPerson person, EpisimContainer<?> container,
+	protected final boolean personRelevantForTrackingOrInfectionDynamics(EpisimPerson person, MutableEpisimContainer<?> container,
 																		 Map<String, Restriction> restrictions, SplittableRandom rnd) {
 
 		return personHasRelevantStatus(person) && checkPersonInContainer(person, container, restrictions, rnd);
@@ -236,7 +236,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	/**
 	 * Checks whether a person would be present in the container.
 	 */
-	protected final boolean checkPersonInContainer(EpisimPerson person, EpisimContainer<?> container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
+	protected final boolean checkPersonInContainer(EpisimPerson person, MutableEpisimContainer<?> container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
 		if (person.getQuarantineStatus() == EpisimPerson.QuarantineStatus.full) {
 			return false;
 		}
@@ -284,7 +284,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	 * Sets the infection status of a person and reports the event.
 	 */
 	protected void infectPerson(EpisimPerson personWrapper, EpisimPerson infector, double now, StringBuilder infectionType,
-								EpisimContainer<?> container) {
+								MutableEpisimContainer<?> container) {
 
 		if (personWrapper.getDiseaseStatus() != EpisimPerson.DiseaseStatus.susceptible) {
 			throw new IllegalStateException("Person to be infected is not susceptible. Status is=" + personWrapper.getDiseaseStatus());

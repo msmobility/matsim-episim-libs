@@ -1,18 +1,16 @@
 package org.matsim.episim.data;
 
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import org.apache.commons.io.IOUtils;
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.EpisimUtils;
 import sun.misc.Unsafe;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -74,12 +72,12 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Map of person ids.
 	 */
-	private final Int2ObjectMap<Id<Person>> persons;
+	private final Int2ObjectMap<EpisimPerson> persons;
 
 	/**
-	 * Map of container ids.
+	 * Map of available container.
 	 */
-	private final Int2ObjectMap<Id<EpisimContainer>> container;
+	private final Int2ObjectMap<EpisimContainer> container;
 
 	/**
 	 * Assigns each activity type a certain byte as id.
@@ -94,16 +92,16 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Number of bytes per event entry.
 	 */
-	private static final int EVENT_BYTES = 20;
+	private static final int EVENT_BYTES = 19;
 
 	/**
 	 * Array of events when person leaves a "container". Order by leave time.
 	 * <p>
 	 * One entry has the following length and data format:
 	 * <p>
-	 * 32bit 32bit 8bit 8bit 16bit 16bit 32bit 16bit = 160bit
+	 * 32bit 32bit 8bit 16bit 16bit 32bit 16bit = 152bit
 	 * <p>
-	 * personId facilityId isVehicle activity leaveTime enterTime contactIndex nContacts
+	 * personId facilityId activity leaveTime enterTime contactIndex nContacts
 	 */
 	private final long events;
 
@@ -136,7 +134,8 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Create graph by reading it from dist.
 	 */
-	ContactGraph(InputStream in, Collection<EpisimConfigGroup.InfectionParams> infectionParams) throws IOException {
+	ContactGraph(InputStream in, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
+				 Int2ObjectMap<EpisimPerson> persons, Int2ObjectMap<EpisimContainer> container) throws IOException {
 
 		ReadableByteChannel c = Channels.newChannel(in);
 		ByteBuffer sizes = ByteBuffer.allocate(Integer.BYTES * 2);
@@ -161,17 +160,16 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			activityMap.put(activityTypes[i], (byte) i);
 		}
 
-		DataInputStream din = new DataInputStream(in);
-
-		persons = EpisimUtils.readIdMap(din, Person.class);
-		container = EpisimUtils.readIdMap(din, EpisimContainer.class);
+		this.persons = persons;
+		this.container = container;
 	}
 
 
 	/**
 	 * Creates static graph from list of events.
 	 */
-	ContactGraph(List<PersonLeavesContainerEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams) {
+	ContactGraph(List<PersonLeavesContainerEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
+				 Int2ObjectMap<EpisimPerson> persons, Int2ObjectMap<EpisimContainer> container) {
 
 		numEvents = eventList.size();
 		numContacts = eventList.stream().mapToInt(PersonLeavesContainerEvent::getNumberOfContacts).sum();
@@ -185,19 +183,8 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			activityMap.put(activityTypes[i], (byte) i);
 		}
 
-		persons = new Int2ObjectArrayMap<>();
-		container = new Int2ObjectArrayMap<>();
-
-		for (PersonLeavesContainerEvent ev : eventList) {
-			persons.put(ev.getPersonId().index(), ev.getPersonId());
-			container.put(ev.getContainerId().index(), ev.getContainerId());
-			for (PersonContact c : ev) {
-				persons.put(c.getContactPersonId().index(), c.getContactPersonId());
-			}
-		}
-
-		// TODO: multiple days already in this graph
-		// NO -> mapping outside of the graphs
+		this.persons = persons;
+		this.container = container;
 
 		copyData(eventList);
 	}
@@ -215,17 +202,16 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 		for (PersonLeavesContainerEvent event : eventList) {
 			it.setIndex(i);
 			it.setContactIndex(contactIdx);
-			it.setContainerId(event.getContainerId().index());
+			it.setContainerId(event.getContainer().getId().index());
 			it.setPersonId(event.getPersonId().index());
 			it.setActivity(event.getActivity());
 			it.setEnterTime(event.getEnterTime());
 			it.setLeaveTime(event.getLeaveTime());
 			it.setNumberOfContacts(event.getNumberOfContacts());
-			it.setInVehicle(event.isInVehicle());
 
 			for (PersonContact pc : event) {
 				c.setIndex(contactIdx);
-				c.setContactPersonId(pc.getContactPersonId().index());
+				c.setContactPersonId(pc.getContactPerson().getId().index());
 				c.setOffset(pc.getOffset());
 				c.setDuration(pc.getDuration());
 				c.setContactPersonActivity(pc.getContactPersonActivity());
@@ -249,11 +235,6 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 		fc.write(buf);
 		fc.write(wrapAddress(events, numEvents * EVENT_BYTES));
 		fc.write(wrapAddress(contacts, numContacts * CONTACT_BYTES));
-
-		DataOutputStream dout = new DataOutputStream(Channels.newOutputStream(fc));
-		EpisimUtils.writeIdMap(dout, persons);
-		EpisimUtils.writeIdMap(dout, container);
-
 	}
 
 	@Override
@@ -294,7 +275,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			this.addr += CONTACT_BYTES;
 		}
 
-		public Id<Person> getContactPersonId() {
+		public EpisimPerson getContactPerson() {
 			return persons.get(UNSAFE.getInt(addr));
 		}
 
@@ -344,7 +325,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			this.it = it;
 		}
 
-		public Id<Person> getPersonId() {
+		public EpisimPerson getPerson() {
 			return persons.get(UNSAFE.getInt(addr));
 		}
 
@@ -352,7 +333,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			UNSAFE.putInt(addr, personId);
 		}
 
-		public Id<EpisimContainer> getContainerId() {
+		public EpisimContainer getContainer() {
 			return container.get(UNSAFE.getInt(addr + 4));
 		}
 
@@ -360,55 +341,47 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			UNSAFE.putInt(addr + 4, facilityId);
 		}
 
-		public boolean isInVehicle() {
-			return UNSAFE.getByte(addr + 8) != 0;
-		}
-
-		private void setInVehicle(boolean b) {
-			UNSAFE.putByte(addr + 8, (byte) (b ? 255 : 0));
-		}
-
 		public EpisimConfigGroup.InfectionParams getActivity() {
-			return activityTypes[UNSAFE.getByte(addr + 9)];
+			return activityTypes[UNSAFE.getByte(addr + 8)];
 		}
 
 		private void setActivity(EpisimConfigGroup.InfectionParams param) {
-			UNSAFE.putByte(addr + 9, activityMap.getByte(param));
+			UNSAFE.putByte(addr + 8, activityMap.getByte(param));
 		}
 
 		public int getLeaveTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 10)) >> 2;
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 9)) >> 2;
 		}
 
 		private void setLeaveTime(int time) {
-			UNSAFE.putShort(addr + 10, (short) (time << 2));
+			UNSAFE.putShort(addr + 9, (short) (time << 2));
 		}
 
 		public int getEnterTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 12)) >> 2;
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 11)) >> 2;
 		}
 
 		private void setEnterTime(int time) {
-			UNSAFE.putShort(addr + 12, (short) (time << 2));
+			UNSAFE.putShort(addr + 11, (short) (time << 2));
 		}
 
 		/**
 		 * Index to {@link #contacts}.
 		 */
 		private int getContactIndex() {
-			return UNSAFE.getInt(addr + 14);
+			return UNSAFE.getInt(addr + 13);
 		}
 
 		private void setContactIndex(int index) {
-			UNSAFE.putInt(addr + 14, index);
+			UNSAFE.putInt(addr + 13, index);
 		}
 
 		public int getNumberOfContacts() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 18));
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 17));
 		}
 
 		private void setNumberOfContacts(int n) {
-			UNSAFE.putShort(addr + 18, (short) n);
+			UNSAFE.putShort(addr + 17, (short) n);
 		}
 
 		@Override

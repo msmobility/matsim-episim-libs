@@ -64,7 +64,7 @@ import static org.matsim.episim.EpisimUtils.writeChars;
 
 /**
  * Main event handler of episim.
- * It consumes the events of a standard MATSim run and puts {@link EpisimPerson}s into {@link EpisimContainer}s during their activity.
+ * It consumes the events of a standard MATSim run and puts {@link EpisimPerson}s into {@link MutableEpisimContainer}s during their activity.
  * At the end of activities an {@link ContactModel} is executed and also a {@link ProgressionModel} at the end of the day.
  * See {@link EpisimModule} for which components may be substituted.
  */
@@ -210,11 +210,11 @@ public final class InfectionEventHandler implements ActivityEndEventHandler, Per
 
 		iteration = 0;
 
-		Object2IntMap<EpisimContainer<?>> groupSize = new Object2IntOpenHashMap<>();
-		Object2IntMap<EpisimContainer<?>> totalUsers = new Object2IntOpenHashMap<>();
-		Object2IntMap<EpisimContainer<?>> maxGroupSize = new Object2IntOpenHashMap<>();
+		Object2IntMap<MutableEpisimContainer<?>> groupSize = new Object2IntOpenHashMap<>();
+		Object2IntMap<MutableEpisimContainer<?>> totalUsers = new Object2IntOpenHashMap<>();
+		Object2IntMap<MutableEpisimContainer<?>> maxGroupSize = new Object2IntOpenHashMap<>();
 
-		Map<EpisimContainer<?>, Object2IntMap<String>> activityUsage = new HashMap<>();
+		Map<MutableEpisimContainer<?>, Object2IntMap<String>> activityUsage = new HashMap<>();
 
 		Map<List<Event>, DayOfWeek> sameDay = new IdentityHashMap<>(7);
 
@@ -422,9 +422,9 @@ public final class InfectionEventHandler implements ActivityEndEventHandler, Per
 		// entry for undefined activity type
 		AbstractObject2IntMap.BasicEntry<String> undefined = new AbstractObject2IntMap.BasicEntry<>("undefined", -1);
 
-		for (Object2IntMap.Entry<EpisimContainer<?>> kv : maxGroupSize.object2IntEntrySet()) {
+		for (Object2IntMap.Entry<MutableEpisimContainer<?>> kv : maxGroupSize.object2IntEntrySet()) {
 
-			EpisimContainer<?> container = kv.getKey();
+			MutableEpisimContainer<?> container = kv.getKey();
 			double scale = 1 / episimConfig.getSampleSize();
 
 			container.setTotalUsers((int) (totalUsers.getInt(container) * scale));
@@ -735,7 +735,7 @@ public final class InfectionEventHandler implements ActivityEndEventHandler, Per
 		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), 0, iteration + 1);
 
 		if (person.isInContainer()) {
-			EpisimContainer<?> container = person.getCurrentContainer();
+			MutableEpisimContainer<?> container = person.getCurrentContainer();
 			Id<?> lastFacilityId = container.getContainerId();
 
 			if (container instanceof EpisimFacility && this.pseudoFacilityMap.containsKey(lastFacilityId) && !firstFacilityId.equals(lastFacilityId)) {
@@ -858,7 +858,7 @@ public final class InfectionEventHandler implements ActivityEndEventHandler, Per
 	/**
 	 * Container that is always a vehicle.
 	 */
-	public static final class EpisimVehicle extends EpisimContainer<Vehicle> {
+	public static final class EpisimVehicle extends MutableEpisimContainer<Vehicle> {
 		EpisimVehicle(Id<Vehicle> vehicleId) {
 			super(vehicleId);
 		}
@@ -867,7 +867,7 @@ public final class InfectionEventHandler implements ActivityEndEventHandler, Per
 	/**
 	 * Container that is a facility and occurred during an activity.
 	 */
-	public static final class EpisimFacility extends EpisimContainer<ActivityFacility> {
+	public static final class EpisimFacility extends MutableEpisimContainer<ActivityFacility> {
 		EpisimFacility(Id<ActivityFacility> facilityId) {
 			super(facilityId);
 		}

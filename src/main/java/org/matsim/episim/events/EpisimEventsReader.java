@@ -27,7 +27,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.EventsReaderXMLv1;
 import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.utils.io.MatsimXmlParser;
-import org.matsim.episim.EpisimContainer;
+import org.matsim.episim.MutableEpisimContainer;
 import org.matsim.episim.EpisimPerson.DiseaseStatus;
 import org.matsim.facilities.ActivityFacility;
 import org.xml.sax.Attributes;
@@ -63,7 +63,7 @@ public class EpisimEventsReader extends MatsimXmlParser {
 			double time = Double.parseDouble(attributes.get(EpisimInfectionEvent.ATTRIBUTE_TIME));
 			Id<Person> person = Id.createPersonId(attributes.get(EpisimInfectionEvent.ATTRIBUTE_PERSON));
 			Id<Person> infector = Id.createPersonId(attributes.get(EpisimInfectionEvent.INFECTOR));
-			Id<?> container = Id.create(attributes.get(EpisimInfectionEvent.CONTAINER), EpisimContainer.class);
+			Id<?> container = Id.create(attributes.get(EpisimInfectionEvent.CONTAINER), MutableEpisimContainer.class);
 			String type = attributes.get(EpisimInfectionEvent.INFECTION_TYPE);
 
 			return new EpisimInfectionEvent(time, person, infector, container, type);

@@ -59,7 +59,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 	 */
 	private final List<EpisimPerson> contactPersons = new ArrayList<>();
 
-	private final Map<EpisimContainer<?>, Set<EpisimPerson>> contacts = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer<?>, Set<EpisimPerson>> contacts = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ PairWiseContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -89,7 +89,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
 	}
 
-	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, EpisimContainer<?> container, double now) {
+	private void notifyEnterContainerGeneralized(EpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
 		try {
 			if (checkPersonInContainer(personEnteringContainer, container, getRestrictions(), rnd)) {
 				contacts.computeIfAbsent(container, (k) -> new HashSet<>()).add(personEnteringContainer);
@@ -99,7 +99,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 		}
 	}
 
-	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, EpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(EpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 

@@ -12,19 +12,17 @@ import java.util.List;
  */
 class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 
-	private final Id<Person> personId;
-	private final Id<EpisimContainer> containerId;
-	private final boolean isVehicle;
+	private final EpisimPerson person;
+	private final EpisimContainer container;
 	private final EpisimConfigGroup.InfectionParams param;
 	private final int leaveTime;
 	private final int enterTime;
 	private final List<PersonContact> contacts;
 
-	PersonLeavesContainerEventImpl(Id<Person> personId, Id<EpisimContainer> containerId, boolean isVehicle,
-								   EpisimConfigGroup.InfectionParams param, int leaveTime, int enterTime, List<PersonContact> contacts) {
-		this.personId = personId;
-		this.containerId = containerId;
-		this.isVehicle = isVehicle;
+	PersonLeavesContainerEventImpl(EpisimPerson person, EpisimContainer container, EpisimConfigGroup.InfectionParams param,
+								   int leaveTime, int enterTime, List<PersonContact> contacts) {
+		this.person = person;
+		this.container = container;
 		this.param = param;
 		this.leaveTime = leaveTime;
 		this.enterTime = enterTime;
@@ -32,18 +30,13 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 	}
 
 	@Override
-	public Id<Person> getPersonId() {
-		return personId;
+	public EpisimPerson getPerson() {
+		return person;
 	}
 
 	@Override
-	public Id<EpisimContainer> getContainerId() {
-		return containerId;
-	}
-
-	@Override
-	public boolean isInVehicle() {
-		return isVehicle;
+	public EpisimContainer getContainer() {
+		return container;
 	}
 
 	@Override
