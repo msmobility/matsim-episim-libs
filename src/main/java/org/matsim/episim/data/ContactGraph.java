@@ -196,6 +196,9 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			}
 		}
 
+		// TODO: multiple days already in this graph
+		// NO -> mapping outside of the graphs
+
 		copyData(eventList);
 	}
 
