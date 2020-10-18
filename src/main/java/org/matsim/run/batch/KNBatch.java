@@ -37,7 +37,7 @@ public class KNBatch implements BatchRun<KNBatch.Params> {
 
 				// Internal classes, should rarely be needed to be reconfigured
 				bind( EpisimRunner.class ).in( Singleton.class );
-				bind( ReplayHandler.class ).in( Singleton.class );
+				bind( InputEventProvider.class ).in( Singleton.class );
 				bind( InfectionEventHandler.class ).in( Singleton.class );
 				bind( EpisimReporting.class ).in( Singleton.class );
 			}

@@ -141,7 +141,7 @@ public class KnRunEpisim {
 
 				// Internal classes, should rarely be needed to be reconfigured
 				bind(EpisimRunner.class).in( Singleton.class );
-				bind( ReplayHandler.class ).in( Singleton.class );
+				bind( InputEventProvider.class ).in( Singleton.class );
 				bind( InfectionEventHandler.class ).in( Singleton.class );
 				bind( EpisimReporting.class ).in( Singleton.class );
 
@@ -353,12 +353,12 @@ public class KnRunEpisim {
 
 	}
 
-	public static void writeGroupSizes( Object2IntMap<MutableEpisimContainer<?>> maxGroupSize ){
+	public static void writeGroupSizes( Object2IntMap<MutableEpisimContainer> maxGroupSize ){
 		{
 			List<Long> cnts = new ArrayList<>();
-			for( Object2IntMap.Entry<MutableEpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
-				MutableEpisimContainer<?> container = entry.getKey();
-				if( !(container instanceof InfectionEventHandler.EpisimFacility) ){
+			for( Object2IntMap.Entry<MutableEpisimContainer> entry : maxGroupSize.object2IntEntrySet() ){
+				MutableEpisimContainer container = entry.getKey();
+				if( !container.isVehicle()){
 					continue;
 				}
 				int idx = container.getMaxGroupSize();
@@ -377,9 +377,9 @@ public class KnRunEpisim {
 		}
 		{
 			List<Long> cnts = new ArrayList<>();
-			for( Object2IntMap.Entry<MutableEpisimContainer<?>> entry : maxGroupSize.object2IntEntrySet() ){
-				MutableEpisimContainer<?> container = entry.getKey();
-				if( !(container instanceof InfectionEventHandler.EpisimVehicle) ){
+			for( Object2IntMap.Entry<MutableEpisimContainer> entry : maxGroupSize.object2IntEntrySet() ){
+				MutableEpisimContainer container = entry.getKey();
+				if( container.isVehicle() ){
 					continue;
 				}
 				int idx = container.getMaxGroupSize();

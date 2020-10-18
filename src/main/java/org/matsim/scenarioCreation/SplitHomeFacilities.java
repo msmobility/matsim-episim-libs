@@ -22,7 +22,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import org.matsim.core.utils.gis.ShapeFileReader;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.ReplayHandler;
+import org.matsim.episim.InputEventProvider;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.opengis.feature.simple.SimpleFeature;
@@ -204,7 +204,7 @@ public class SplitHomeFacilities implements Callable<Integer> {
 			log.info("Processing event file {}", events);
 
 			episimConfig.setInputEventsFile(events.toString());
-			ReplayHandler replay = new ReplayHandler(episimConfig, null);
+			InputEventProvider replay = new InputEventProvider(episimConfig, null);
 			EventsManager manager = EventsUtils.createEventsManager();
 
 			String eventName = events.getFileName().toString().replace(".xml.gz", "") + "_split.xml.gz";

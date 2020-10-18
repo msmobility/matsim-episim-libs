@@ -36,6 +36,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.events.EpisimContactEvent;
 import org.matsim.episim.events.EpisimInfectionEvent;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
@@ -360,7 +361,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 * @param infector      infector
 	 * @param infectionType activities of both persons
 	 */
-	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType, MutableEpisimContainer<?> container) {
+	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType, MutableEpisimContainer container) {
 
 		int cnt = specificInfectionsCnt.getOpaque();
 		// This counter is used by many threads, for better performance we use very weak memory guarantees here
@@ -392,7 +393,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 *
 	 * @see EpisimContactEvent
 	 */
-	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, MutableEpisimContainer<?> container,
+	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, MutableEpisimContainer container,
 							  StringBuilder actType, double duration) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
@@ -469,12 +470,12 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		manager.processEvent(event);
 	}
 
-	public void reportContainerUsage(Object2IntMap<MutableEpisimContainer<?>> maxGroupSize,
-                                     Object2IntMap<MutableEpisimContainer<?>> containerSize, Map<MutableEpisimContainer<?>, Object2IntMap<String>> activityUsage) {
+	public void reportContainerUsage(Object2IntMap<? extends EpisimContainer> maxGroupSize, Object2IntMap< ? extends EpisimContainer>
+			containerSize, Map< ?  extends EpisimContainer, Object2IntMap<String>> activityUsage) {
 
 		BufferedWriter out = EpisimWriter.prepare(base + "containerUsage.txt.gz", "id", "types", "containerSize", "maxGroupSize");
 
-		for (Object2IntMap.Entry<MutableEpisimContainer<?>> kv : maxGroupSize.object2IntEntrySet()) {
+		for (Object2IntMap.Entry<? extends EpisimContainer> kv : maxGroupSize.object2IntEntrySet()) {
 
 			double scale = 1 / episimConfig.getSampleSize();
 

@@ -204,7 +204,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 		for (PersonLeavesContainerEvent event : eventList) {
 			it.setIndex(i);
 			it.setContactIndex(contactIdx);
-			it.setContainerId(event.getContainer().getId().index());
+			it.setContainerId(event.getContainer().getContainerId().index());
 			it.setPersonId(event.getPersonId().index());
 			it.setActivity(event.getActivity());
 			it.setEnterTime(event.getEnterTime());

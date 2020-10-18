@@ -28,6 +28,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.episim.data.EpisimContainer;
+import org.matsim.facilities.ActivityFacility;
+import org.matsim.vehicles.Vehicle;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -41,11 +43,10 @@ import static org.matsim.episim.EpisimUtils.writeChars;
 
 /**
  * Wrapper class for a specific location that keeps track of currently contained agents and entering times.
- *
- * @param <T> the type where the agents are located in, e.g {@link org.matsim.vehicles.Vehicle} or {@link org.matsim.facilities.Facility}.
  */
-public class MutableEpisimContainer<T> implements EpisimContainer {
-	private final Id<T> containerId;
+public class MutableEpisimContainer implements EpisimContainer {
+	private final Id<EpisimContainer> containerId;
+	private final boolean isVehicle;
 
 	/**
 	 * Persons currently in this container. Stored only as Ids.
@@ -80,14 +81,24 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	 */
 	private double numSpaces = 1;
 
-	MutableEpisimContainer(Id<T> containerId) {
-		this.containerId = containerId;
+	/**
+	 * Creates a container that is not a vehicle.
+	 * @param containerId
+	 */
+	MutableEpisimContainer(Id<EpisimContainer> containerId) {
+		this(containerId, false);
+	}
+
+	MutableEpisimContainer(Id<?> containerId, boolean isVehicle) {
+		this.containerId = Id.create(containerId.toString(), EpisimContainer.class);
+		this.isVehicle = isVehicle;
 	}
 
 	/**
 	 * Reads containers state from stream.
 	 */
-	void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons) throws IOException {
+	@Override
+	public void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons) throws IOException {
 
 		this.persons.clear();
 		this.personsAsList.clear();
@@ -105,7 +116,8 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	/**
 	 * Writes state to stream.
 	 */
-	void write(ObjectOutput out) throws IOException {
+	@Override
+	public void write(ObjectOutput out) throws IOException {
 
 		out.writeInt(containerEnterTimes.size());
 		for (MutableEpisimPerson p : personsAsList) {
@@ -142,19 +154,13 @@ public class MutableEpisimContainer<T> implements EpisimContainer {
 	}
 
 	@Override
-	public Id<EpisimContainer> getId() {
-		// TODO: stub implementation
-		return Id.create(containerId.toString(), EpisimContainer.class);
+	public Id<EpisimContainer> getContainerId() {
+		return containerId;
 	}
 
 	@Override
 	public boolean isVehicle() {
-		// TODO: fixing this
-		return this instanceof InfectionEventHandler.EpisimVehicle;
-	}
-
-	public Id<T> getContainerId() {
-		return containerId;
+		return isVehicle;
 	}
 
 	/**

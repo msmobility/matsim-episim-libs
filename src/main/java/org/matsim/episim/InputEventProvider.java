@@ -39,11 +39,11 @@ import java.util.*;
 
 
 /**
- * Handler that replays events from {@link EpisimConfigGroup#getInputEventsFile()} with corrected time and attributes.
+ * Handler that reads events from {@link EpisimConfigGroup#getInputEventsFile()} with attributes.
  */
-public final class ReplayHandler {
+public final class InputEventProvider {
 
-	private static final Logger log = LogManager.getLogger(ReplayHandler.class);
+	private static final Logger log = LogManager.getLogger(InputEventProvider.class);
 
 	private final Scenario scenario;
 	private final Map<DayOfWeek, List<Event>> events = new EnumMap<>(DayOfWeek.class);
@@ -52,7 +52,7 @@ public final class ReplayHandler {
 	 * Constructor with optional scenario. Events will be read from given {@link EpisimConfigGroup#getInputEventsFiles()}.
 	 */
 	@Inject
-	public ReplayHandler(EpisimConfigGroup config, @Nullable Scenario scenario) {
+	public InputEventProvider(EpisimConfigGroup config, @Nullable Scenario scenario) {
 		this.scenario = scenario;
 
 		for (EpisimConfigGroup.EventFileParams input : config.getInputEventsFiles()) {
@@ -87,19 +87,9 @@ public final class ReplayHandler {
 	 *
 	 * @param events ordered events for all weekdays
 	 */
-	public ReplayHandler(Map<DayOfWeek, List<Event>> events) {
+	public InputEventProvider(Map<DayOfWeek, List<Event>> events) {
 		this.events.putAll(events);
 		this.scenario = null;
-	}
-
-	/**
-	 * Replays event add modifies attributes based on current iteration.
-	 */
-	public void replayEvents(final EventsManager manager, DayOfWeek day) {
-
-		for (final Event e : events.get(day)) {
-			manager.processEvent(e);
-		}
 	}
 
 	/**

@@ -10,6 +10,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.RestrictionTest;
@@ -62,15 +63,15 @@ public class DefaultContactModelTest {
 	 * @param p         provider for person
 	 * @return sampled infection rate
 	 */
-	private double sampleInfectionRate(Duration jointTime, String actType, Supplier<InfectionEventHandler.EpisimFacility> f,
-									   Function<InfectionEventHandler.EpisimFacility, MutableEpisimPerson> p) {
+	private double sampleInfectionRate(Duration jointTime, String actType, Supplier<MutableEpisimContainer> f,
+									   Function<MutableEpisimContainer, MutableEpisimPerson> p) {
 
 		int infections = 0;
 
 		for (int i = 0; i < 30_000; i++) {
-			InfectionEventHandler.EpisimFacility container = f.get();
+			MutableEpisimContainer container = f.get();
 			MutableEpisimPerson person = p.apply(container);
-			model.infectionDynamicsFacility(person, container, jointTime.getSeconds(), actType);
+			model.infectionDynamicsContainer(person, container, jointTime.getSeconds());
 			if (person.getDiseaseStatus() == DiseaseStatus.infectedButNotContagious)
 				infections++;
 		}
@@ -83,19 +84,19 @@ public class DefaultContactModelTest {
 	 *
 	 * @return infection rate of all persons in the container
 	 */
-	private double sampleTotalInfectionRate(int n, Duration jointTime, String actType, Supplier<InfectionEventHandler.EpisimFacility> f) {
+	private double sampleTotalInfectionRate(int n, Duration jointTime, String actType, Supplier<MutableEpisimContainer> f) {
 
 		double rate = 0;
 
 		Random r = new Random(0);
 
 		for (int i = 0; i < n; i++) {
-			InfectionEventHandler.EpisimFacility container = f.get();
+			MutableEpisimContainer container = f.get();
 			List<MutableEpisimPerson> allPersons = Lists.newArrayList(container.getPersons());
 
 			while (!container.getPersons().isEmpty()) {
 				MutableEpisimPerson person = container.getPersons().get(r.nextInt(container.getPersons().size()));
-				model.infectionDynamicsFacility(person, container, jointTime.getSeconds(), actType);
+				model.infectionDynamicsContainer(person, container, jointTime.getSeconds());
 				EpisimTestUtils.removePerson(container, person);
 			}
 
@@ -253,7 +254,7 @@ public class DefaultContactModelTest {
 	@Test
 	public void homeQuarantineContact() {
 
-		Function<InfectionEventHandler.EpisimFacility, MutableEpisimPerson> createPerson = (f) -> {
+		Function<MutableEpisimContainer, MutableEpisimPerson> createPerson = (f) -> {
 			MutableEpisimPerson p = EpisimTestUtils.createPerson("home", f);
 			p.setQuarantineStatus(QuarantineStatus.atHome, 0);
 			return p;
@@ -317,8 +318,8 @@ public class DefaultContactModelTest {
 		TracingConfigGroup tracingConfig = ConfigUtils.addOrGetModule( config, TracingConfigGroup.class );
 
 		// Container with persons of different state
-		Supplier<InfectionEventHandler.EpisimFacility> container = () -> {
-			InfectionEventHandler.EpisimFacility f = EpisimTestUtils.createFacility(3, "leis", EpisimTestUtils.CONTAGIOUS);
+		Supplier<MutableEpisimContainer> container = () -> {
+			MutableEpisimContainer f = EpisimTestUtils.createFacility(3, "leis", EpisimTestUtils.CONTAGIOUS);
 			EpisimTestUtils.addPersons(f, 3, "leis", EpisimTestUtils.FULL_QUARANTINE);
 			EpisimTestUtils.addPersons(f, 1, "leis", (p) -> { });
 			EpisimTestUtils.addPersons(f, 1, "work", (p) -> { });

@@ -141,3 +141,25 @@ sns.lineplot(x="date", y="cases", estimator="mean", ci="q95", ax=ax,
 plt.ylim(bottom=1)
 ax.xaxis.set_major_formatter(dateFormater)
 ax.yaxis.set_major_formatter(ScalarFormatter())
+
+
+#%%
+
+curfew = read_batch_run("data/curfew2.zip")
+
+#%%
+
+df = curfew[(curfew.variant == "current")]
+
+fig, ax = plt.subplots(dpi=250, figsize=(7.5, 3.8))
+hue = sns.color_palette(n_colors=7)
+
+rki.plot.scatter(x="date", y=["cases"], label=["RKI Cases"], color=palette[4], ax=ax)
+
+sns.lineplot(x="date", y="cases", estimator="mean", ci="q95", ax=ax,
+             hue="curfew", palette=hue, data=df)
+
+plt.ylim(bottom=1)
+plt.yscale("log")
+ax.xaxis.set_major_formatter(dateFormater)
+ax.yaxis.set_major_formatter(ScalarFormatter())

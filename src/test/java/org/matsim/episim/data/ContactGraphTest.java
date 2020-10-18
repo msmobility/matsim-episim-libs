@@ -36,7 +36,7 @@ public class ContactGraphTest {
 			EpisimPerson p = EpisimTestUtils.createPerson(null);
 			persons.put(p.getId().index(), p.getId());
 			EpisimContainer c = EpisimTestUtils.createFacility();
-			container.put(c.getId().index(), c);
+			container.put(c.getContainerId().index(), c);
 		}
 	}
 

@@ -29,6 +29,7 @@ import org.matsim.episim.*;
 import java.util.SplittableRandom;
 
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 
 /**
  * Variant of the {@link DefaultContactModel} with symmetric interactions.
@@ -66,16 +67,11 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
-		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
+	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
+		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
 	}
 
-	@Override
-	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
-		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
-	}
-
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
 
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
@@ -100,7 +96,7 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 
 			int maxPersonsInContainer = (int) (container.getMaxGroupSize() * episimConfig.getSampleSize());
 			// typical size is undefined if no vehicle file is used
-			if ( container instanceof InfectionEventHandler.EpisimVehicle && container.getTypicalCapacity() > -1) {
+			if ( container.isVehicle() && container.getTypicalCapacity() > -1) {
 				maxPersonsInContainer = (int) (container.getTypicalCapacity() * episimConfig.getSampleSize());
 //				if ( container.getMaxGroupSize() > container.getTypicalCapacity() ) {
 //					log.warn("yyyyyy: vehicleId={}: maxGroupSize={} is larger than typicalCapacity={}; need to find organized answer to this.",
@@ -151,7 +147,7 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 			double jointTimeInContainer = calculateJointTimeInContainer(now, personLeavingContainer, containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
 
 			//forbid certain cross-activity interactions, keep track of contacts
-			if (container instanceof InfectionEventHandler.EpisimFacility) {
+			if (container.isFacility()) {
 				//home can only interact with home, leisure or work
 				if (infectionType.indexOf("home") >= 0 && infectionType.indexOf("leis") == -1 && infectionType.indexOf("work") == -1
 						&& !(leavingPersonsActivity.startsWith("home") && otherPersonsActivity.startsWith("home"))) {

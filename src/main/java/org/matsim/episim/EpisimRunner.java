@@ -31,6 +31,8 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.ControlerUtils;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.episim.data.EpisimEventProvider;
+import org.matsim.episim.data.PersonLeavesContainerEvent;
 import org.matsim.episim.model.ProgressionModel;
 
 import java.io.Externalizable;
@@ -46,7 +48,7 @@ import java.time.DayOfWeek;
  * Main entry point and runner of one epidemic simulation.
  * <p>
  * Using the {@link #run(int)} method, this class will repeatedly loop over {@link InfectionEventHandler} with
- * events provided by the {@link ReplayHandler}.
+ * events provided by the {@link InputEventProvider}.
  */
 public final class EpisimRunner {
 
@@ -55,17 +57,17 @@ public final class EpisimRunner {
 	private final Config config;
 	private final EventsManager manager;
 	private final Provider<InfectionEventHandler> handlerProvider;
-	private final Provider<ReplayHandler> replayProvider;
+	private final Provider<EpisimEventProvider> eventProvider;
 	private final Provider<EpisimReporting> reportingProvider;
 	private final Provider<ProgressionModel> progressionProvider;
 
 	@Inject
-	public EpisimRunner(Config config, EventsManager manager, Provider<InfectionEventHandler> handlerProvider, Provider<ReplayHandler> replay,
+	public EpisimRunner(Config config, EventsManager manager, Provider<InfectionEventHandler> handlerProvider, Provider<EpisimEventProvider> eventProvider,
 						Provider<EpisimReporting> reportingProvider, Provider<ProgressionModel> progressionProvider) {
 		this.config = config;
 		this.handlerProvider = handlerProvider;
 		this.manager = manager;
-		this.replayProvider = replay;
+		this.eventProvider = eventProvider;
 		this.reportingProvider = reportingProvider;
 		this.progressionProvider = progressionProvider;
 	}
@@ -78,7 +80,7 @@ public final class EpisimRunner {
 	public void run(int maxIterations) {
 
 		// Construct these dependencies as late as possible, so all other configs etc have been fully configured
-		final ReplayHandler replay = replayProvider.get();
+		final EpisimEventProvider eventProvider = this.eventProvider.get();
 		final InfectionEventHandler handler = handlerProvider.get();
 		final EpisimReporting reporting = reportingProvider.get();
 
@@ -88,12 +90,13 @@ public final class EpisimRunner {
 		if (episimConfig.getWriteEvents() != EpisimConfigGroup.WriteEvents.none)
 			manager.addHandler(reporting);
 
-		// needs to be after reporting
-		manager.addHandler(handler);
 
 		ControlerUtils.checkConfigConsistencyAndWriteToLog(config, "Just before starting iterations");
 
-		handler.init(replay.getEvents());
+		eventProvider.init();
+
+		// TODO: needed?
+		// handler.init(replay.getEvents());
 
 		Path output = Path.of(config.controler().getOutputDirectory());
 
@@ -120,7 +123,7 @@ public final class EpisimRunner {
 			if (iteration % 10 == 0)
 				Gbl.printMemoryUsage();
 
-			if (!doStep(replay, handler, reporting, iteration))
+			if (!doStep(eventProvider, handler, reporting, iteration))
 				break;
 
 		}
@@ -133,16 +136,20 @@ public final class EpisimRunner {
 	 *
 	 * @return false, when the simulation should end
 	 */
-	boolean doStep(final ReplayHandler replay, final InfectionEventHandler handler, final EpisimReporting reporting, int iteration) {
+	boolean doStep(final EpisimEventProvider eventProvider, final InfectionEventHandler handler, final EpisimReporting reporting, int iteration) {
 
 		manager.resetHandlers(iteration);
+		eventProvider.reset(iteration);
+		handler.reset(iteration);
+
 		if (handler.isFinished())
 			return false;
 
 		DayOfWeek day = EpisimUtils.getDayOfWeek(ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class).getStartDate(), iteration);
 
-		// Process all events
-		replay.replayEvents(manager, day);
+		for (PersonLeavesContainerEvent e : eventProvider.forDay(day)) {
+			handler.processEvent(e);
+		}
 
 		reporting.flushEvents();
 

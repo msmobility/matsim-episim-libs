@@ -58,7 +58,7 @@ public interface EpisimPerson extends Attributable {
 	/**
 	 * Container of infection (if any happened)
 	 */
-	//Id<EpisimContainer> getInfectionContainer();
+	Id<EpisimContainer> getInfectionContainer();
 
 	/**
 	 * Type of infection, i.e. activities performed when person was infected.

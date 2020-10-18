@@ -11,6 +11,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.*;
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.facilities.ActivityFacility;
 
@@ -81,7 +82,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 	/**
 	 * Counts how many infections occurred at each location.
 	 */
-	private final Object2IntMap<Id<ActivityFacility>> locations = new Object2IntOpenHashMap<>();
+	private final Object2IntMap<Id<EpisimContainer>> locations = new Object2IntOpenHashMap<>();
 
 	/**
 	 * Persons marked for contact tracing.
@@ -218,10 +219,10 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 
 		// perform the location based tracing
 		// there is always a delay of 1 day
-		ObjectIterator<Object2IntMap.Entry<Id<ActivityFacility>>> it = locations.object2IntEntrySet().iterator();
+		ObjectIterator<Object2IntMap.Entry<Id<EpisimContainer>>> it = locations.object2IntEntrySet().iterator();
 		while (it.hasNext()) {
 
-			Object2IntMap.Entry<Id<ActivityFacility>> e = it.next();
+			Object2IntMap.Entry<Id<EpisimContainer>> e = it.next();
 
 			// trace facilities that are above the threshold
 			if (e.getIntValue() >= tracingConfig.getLocationThreshold()) {
@@ -413,7 +414,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 
 		int n = in.readInt();
 		for (int i = 0; i < n; i++) {
-			Id<ActivityFacility> id = Id.create(readChars(in), ActivityFacility.class);
+			Id<EpisimContainer> id = Id.create(readChars(in), EpisimContainer.class);
 			locations.put(id, in.readInt());
 		}
 
@@ -431,7 +432,7 @@ public class ConfigurableProgressionModel extends AbstractProgressionModel {
 		out.writeLong(prevShowingSymptoms);
 
 		out.writeInt(locations.size());
-		for (Object2IntMap.Entry<Id<ActivityFacility>> e : locations.object2IntEntrySet()) {
+		for (Object2IntMap.Entry<Id<EpisimContainer>> e : locations.object2IntEntrySet()) {
 			writeChars(out, e.getKey().toString());
 			out.writeInt(e.getIntValue());
 		}

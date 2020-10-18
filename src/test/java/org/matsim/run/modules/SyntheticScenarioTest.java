@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.HasFacilityId;
-import org.matsim.episim.ReplayHandler;
+import org.matsim.episim.InputEventProvider;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.run.batch.SyntheticBatch;
 
@@ -29,7 +29,7 @@ public class SyntheticScenarioTest {
 	@Test
 	public void length() {
 
-		ReplayHandler handler = new SyntheticScenario(
+		InputEventProvider handler = new SyntheticScenario(
 				new SyntheticBatch.Params(1, 1, 1, 2, 1, null, 1)).replayHandler();
 		List<Event> events = handler.getEvents().get(DayOfWeek.MONDAY);
 
@@ -47,7 +47,7 @@ public class SyntheticScenarioTest {
 	@Test
 	public void events() {
 
-		ReplayHandler handler = new SyntheticScenario(
+		InputEventProvider handler = new SyntheticScenario(
 				new SyntheticBatch.Params(10, 2, 2, 1, 1, null, 1)).replayHandler();
 		List<Event> events = handler.getEvents().get(DayOfWeek.MONDAY);
 

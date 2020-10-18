@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.SplittableRandom;
 
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 
 /**
  * Default contact model executed, when a person ends his activity.
@@ -65,16 +66,11 @@ public final class DefaultContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now) {
-		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
+	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
+		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
 	}
 
-	@Override
-	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType) {
-		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
-	}
-
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
 
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
@@ -136,7 +132,7 @@ public final class DefaultContactModel extends AbstractContactModel {
 			double jointTimeInContainer = calculateJointTimeInContainer(now, personLeavingContainer, containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
 
 			//forbid certain cross-activity interactions, keep track of contacts
-			if (container instanceof InfectionEventHandler.EpisimFacility) {
+			if (!container.isVehicle()) {
 				//home can only interact with home, leisure or work
 				if (infectionType.indexOf("home") >= 0 && infectionType.indexOf("leis") == -1 && infectionType.indexOf("work") == -1
 						&& !(leavingPersonsActivity.startsWith("home") && otherPersonsActivity.startsWith("home"))) {

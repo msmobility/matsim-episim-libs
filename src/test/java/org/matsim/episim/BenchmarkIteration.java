@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.util.Modules;
 import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.episim.data.EpisimEventProvider;
 import org.matsim.run.modules.SnzBerlinWeekScenario2020;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -21,7 +22,7 @@ public class BenchmarkIteration {
 
 	private EpisimRunner runner;
 	private InfectionEventHandler handler;
-	private ReplayHandler replay;
+	private EpisimEventProvider events;
 	private EpisimReporting reporting;
 	private int iteration = 1;
 
@@ -46,22 +47,20 @@ public class BenchmarkIteration {
 		//injector.getInstance(TracingConfigGroup.class).setPutTraceablePersonsInQuarantineAfterDay(0);
 
 		runner = injector.getInstance(EpisimRunner.class);
-		replay = injector.getInstance(ReplayHandler.class);
+		events = injector.getInstance(EpisimEventProvider.class);
 		handler = injector.getInstance(InfectionEventHandler.class);
 		reporting = injector.getInstance(EpisimReporting.class);
-
-		injector.getInstance(EventsManager.class).addHandler(handler);
 
 		// benchmark with event writing
 		// injector.getInstance(EventsManager.class).addHandler(reporting);
 
-		handler.init(replay.getEvents());
+		events.init();
 	}
 
 	@Benchmark
 	public void iteration() {
 
-		runner.doStep(replay, handler, reporting, iteration);
+		runner.doStep(events, handler, reporting, iteration);
 		iteration++;
 
 	}

@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.data.DiseaseStatus;
+import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.data.EpisimPerson;
 import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
@@ -76,7 +77,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	/**
 	 * The first visited {@link org.matsim.facilities.ActivityFacility} for each day.
 	 */
-	private final Id<ActivityFacility>[] firstFacilityId = new Id[7];
+	private final Id<EpisimContainer>[] firstFacilityId = new Id[7];
 
 	// Fields above are initialized from the sim and not persisted
 
@@ -98,12 +99,12 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	/**
 	 * The {@link MutableEpisimContainer} the person is currently located in.
 	 */
-	private MutableEpisimContainer<?> currentContainer = null;
+	private MutableEpisimContainer currentContainer = null;
 
 	/**
 	 * The facility where the person got infected. Can be null if person was initially infected.
 	 */
-	private Id<ActivityFacility> infectionContainer = null;
+	private Id<EpisimContainer> infectionContainer = null;
 
 	/**
 	 * The infection type when the person got infected. Can be null if person was initially infected.
@@ -147,8 +148,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	 * @param persons map of all persons in the simulation
 	 */
 	void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons,
-			  Map<Id<ActivityFacility>, InfectionEventHandler.EpisimFacility> facilities,
-			  Map<Id<Vehicle>, InfectionEventHandler.EpisimVehicle> vehicles) throws IOException {
+			  Map<Id<EpisimContainer>, EpisimContainer> container) throws IOException {
 
 		int n = in.readInt();
 		traceableContactPersons.clear();
@@ -166,12 +166,8 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 
 		// Current container is set
 		if (in.readBoolean()) {
-			boolean isVehicle = in.readBoolean();
 			String name = readChars(in);
-			if (isVehicle) {
-				currentContainer = vehicles.get(Id.create(name, Vehicle.class));
-			} else
-				currentContainer = facilities.get(Id.create(name, ActivityFacility.class));
+			currentContainer = (MutableEpisimContainer) container.get(Id.create(name, EpisimContainer.class));
 
 			if (currentContainer == null)
 				throw new IllegalStateException("Could not reconstruct container: " + name);
@@ -179,7 +175,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 			currentContainer = null;
 
 		if (in.readBoolean()){
-			infectionContainer = Id.create(readChars(in), ActivityFacility.class);
+			infectionContainer = Id.create(readChars(in), EpisimContainer.class);
 		}
 
 		if (in.readBoolean()) {
@@ -219,7 +215,6 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 
 		out.writeBoolean(currentContainer != null);
 		if (currentContainer != null) {
-			out.writeBoolean(currentContainer instanceof InfectionEventHandler.EpisimVehicle);
 			writeChars(out, currentContainer.getContainerId().toString());
 		}
 
@@ -412,7 +407,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		firstFacilityId[target.getValue() - 1] = firstFacilityId[source.getValue() - 1];
 	}
 
-	public MutableEpisimContainer<?> getCurrentContainer() {
+	public MutableEpisimContainer getCurrentContainer() {
 		return currentContainer;
 	}
 
@@ -420,7 +415,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	 * Set the container the person is currently contained in. {@link #removeCurrentContainer(MutableEpisimContainer)} must be called before a new
 	 * container can be set.
 	 */
-	public void setCurrentContainer(MutableEpisimContainer<?> container) {
+	public void setCurrentContainer(MutableEpisimContainer container) {
 		if (this.currentContainer != null)
 			throw new IllegalStateException(String.format("Person in more than one container at once. Person=%s in %s and %s",
 					this.getPersonId(), container.getContainerId(), this.currentContainer.getContainerId()));
@@ -441,26 +436,26 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		return currentContainer != null;
 	}
 
-	public void removeCurrentContainer(MutableEpisimContainer<?> container) {
+	public void removeCurrentContainer(MutableEpisimContainer container) {
 		if (this.currentContainer != container)
 			throw new IllegalStateException(String.format("Person is currently in %s, but not in removed one %s", currentContainer, container));
 
 		this.currentContainer = null;
 	}
 
-	Id<ActivityFacility> getFirstFacilityId(DayOfWeek day) {
+	Id<EpisimContainer> getFirstFacilityId(DayOfWeek day) {
 		return firstFacilityId[day.getValue() - 1];
 	}
 
-	void setFirstFacilityId(Id<ActivityFacility> firstFacilityId, DayOfWeek day) {
+	void setFirstFacilityId(Id<EpisimContainer> firstFacilityId, DayOfWeek day) {
 		this.firstFacilityId[day.getValue() - 1] = firstFacilityId;
 	}
 
-	public void setInfectionContainer(MutableEpisimContainer<?> container) {
-		this.infectionContainer = (Id<ActivityFacility>) container.getContainerId();
+	public void setInfectionContainer(MutableEpisimContainer container) {
+		this.infectionContainer =container.getContainerId();
 	}
 
-	public Id<ActivityFacility> getInfectionContainer() {
+	public Id<EpisimContainer> getInfectionContainer() {
 		return infectionContainer;
 	}
 

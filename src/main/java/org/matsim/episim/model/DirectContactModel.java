@@ -30,8 +30,7 @@ import org.matsim.episim.*;
 import java.util.*;
 
 import org.matsim.episim.data.DiseaseStatus;
-import static org.matsim.episim.InfectionEventHandler.EpisimFacility;
-import static org.matsim.episim.InfectionEventHandler.EpisimVehicle;
+import org.matsim.episim.data.EpisimContainer;
 
 /**
  * Model where persons are only interacting pairwise.
@@ -55,8 +54,8 @@ public final class DirectContactModel extends AbstractContactModel {
 	 */
 	private final StringBuilder buffer = new StringBuilder();
 
-	private final Map<MutableEpisimContainer<?>, MutableEpisimPerson> singlePersons = new IdentityHashMap<>();
-	private final Map<MutableEpisimContainer<?>, List<Group>> groups = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer, MutableEpisimPerson> singlePersons = new IdentityHashMap<>();
+	private final Map<MutableEpisimContainer, List<Group>> groups = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ DirectContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -67,26 +66,17 @@ public final class DirectContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
-		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
+	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
+		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
 	}
 
 	@Override
-	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
-		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
+	public void notifyEnterContainer(MutableEpisimPerson personEntering, EpisimContainer container, double now) {
+		if (container.isFacility())
+			notifyEnterContainerGeneralized(personEntering, (MutableEpisimContainer) container, now);
 	}
 
-	@Override
-	public void notifyEnterVehicle(MutableEpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
-		notifyEnterContainerGeneralized(personEnteringVehicle, vehicle, now);
-	}
-
-	@Override
-	public void notifyEnterFacility(MutableEpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
-		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
-	}
-
-	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
+	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer container, double now) {
 
 		// this can happen because persons are not removed during initialization
 		if (findGroup(container, personEnteringContainer) != null)
@@ -102,7 +92,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		}
 	}
 
-	private Group findGroup(MutableEpisimContainer<?> container, MutableEpisimPerson person) {
+	private Group findGroup(MutableEpisimContainer container, MutableEpisimPerson person) {
 
 		if (!groups.containsKey(container))
 			return null;
@@ -116,7 +106,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		return null;
 	}
 
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 			removePersonFromGroups(container, personLeavingContainer, now);
@@ -177,7 +167,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		}
 
 		//forbid certain cross-activity interactions, keep track of contacts
-		if (container instanceof EpisimFacility) {
+		if (container.isFacility()) {
 			//home can only interact with home, leisure or work
 			if (infectionType.indexOf("home") >= 0 && infectionType.indexOf("leis") == -1 && infectionType.indexOf("work") == -1
 					&& !(leavingPersonsActivity.startsWith("home") && otherPersonsActivity.startsWith("home"))) {
@@ -241,7 +231,7 @@ public final class DirectContactModel extends AbstractContactModel {
 	 *
 	 * @return contact person if person was in group.
 	 */
-	private Pair<MutableEpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer<?> container, MutableEpisimPerson personLeavingContainer, double time) {
+	private Pair<MutableEpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer container, MutableEpisimPerson personLeavingContainer, double time) {
 		if (singlePersons.get(container) == personLeavingContainer) {
 			singlePersons.remove(container);
 			return null;

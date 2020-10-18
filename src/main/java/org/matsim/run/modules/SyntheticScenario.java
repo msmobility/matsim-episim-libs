@@ -38,7 +38,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.MutableEpisimPerson;
-import org.matsim.episim.ReplayHandler;
+import org.matsim.episim.InputEventProvider;
 import org.matsim.episim.TracingConfigGroup;
 import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.model.*;
@@ -108,7 +108,7 @@ public class SyntheticScenario extends AbstractModule {
 
 	@Provides
 	@Singleton
-	public ReplayHandler replayHandler() {
+	public InputEventProvider replayHandler() {
 		Map<DayOfWeek, List<Event>> all = new EnumMap<>(DayOfWeek.class);
 
 		Id<Link> link = Id.createLinkId("link");
@@ -156,12 +156,12 @@ public class SyntheticScenario extends AbstractModule {
 			all.put(day, events);
 		}
 
-		return new ReplayHandler(all);
+		return new InputEventProvider(all);
 	}
 
 	@Provides
 	@Singleton
-	public InitialInfectionHandler initialInfectionHandler(ReplayHandler replayHandler) {
+	public InitialInfectionHandler initialInfectionHandler(InputEventProvider replayHandler) {
 		// dependency on replay handler so this function is called after facilities have been constructed
 		return new InitialInfections(facilities, params.initialPerFacility);
 

@@ -22,6 +22,7 @@ package org.matsim.episim.model;
 
 import org.matsim.episim.MutableEpisimPerson;
 import org.matsim.episim.InfectionEventHandler;
+import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.policy.Restriction;
 
 import java.util.Map;
@@ -32,16 +33,16 @@ import java.util.Map;
 public interface ContactModel {
 
 	/**
-	 * This method is called when a persons leave a vehicle at {@code now}.
+	 * This method is called when a persons leave a container at {@code now}.
 	 */
-	void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now);
-	void notifyEnterVehicle(MutableEpisimPerson personEnteringVehicle, InfectionEventHandler.EpisimVehicle vehicle, double now);
+	void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now);
 
 	/**
-	 * This method is called when a persons leaves a facility at {@code now}.
+	 * Called when a container is entered by a person.
 	 */
-	void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, InfectionEventHandler.EpisimFacility facility, double now, String actType);
-	void notifyEnterFacility(MutableEpisimPerson personEnteringFacility, InfectionEventHandler.EpisimFacility facility, double now);
+	default void notifyEnterContainer(MutableEpisimPerson personEntering, EpisimContainer container, double now) {
+
+	}
 
 	/**
 	 * Set the current iteration and restrictions in place.

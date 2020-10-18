@@ -87,7 +87,7 @@ public class MutableEpisimPersonTest {
 		Map<Id<Person>, MutableEpisimPerson> persons = new HashMap<>();
 
 		MutableEpisimPerson p2 = EpisimTestUtils.createPerson("c1.0", null);
-		p2.read(new ObjectInputStream(new ByteArrayInputStream(out.toByteArray())), persons, null, null);
+		p2.read(new ObjectInputStream(new ByteArrayInputStream(out.toByteArray())), persons,  null);
 
 		assertThat(p2.getDiseaseStatus())
 				.isEqualTo(DiseaseStatus.showingSymptoms);

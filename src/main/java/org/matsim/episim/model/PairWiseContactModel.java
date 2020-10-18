@@ -29,8 +29,8 @@ import org.matsim.episim.*;
 import java.util.*;
 
 import org.matsim.episim.data.DiseaseStatus;
-import static org.matsim.episim.InfectionEventHandler.EpisimFacility;
-import static org.matsim.episim.InfectionEventHandler.EpisimVehicle;
+import org.matsim.episim.data.EpisimContainer;
+
 
 /**
  * Model where persons are only interacting pairwise.
@@ -59,7 +59,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 	 */
 	private final List<MutableEpisimPerson> contactPersons = new ArrayList<>();
 
-	private final Map<MutableEpisimContainer<?>, Set<MutableEpisimPerson>> contacts = new IdentityHashMap<>();
+	private final Map<EpisimContainer, Set<MutableEpisimPerson>> contacts = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ PairWiseContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -70,36 +70,23 @@ public final class PairWiseContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsVehicle(MutableEpisimPerson personLeavingVehicle, EpisimVehicle vehicle, double now) {
-		infectionDynamicsGeneralized(personLeavingVehicle, vehicle, now);
+	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
+		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
 	}
+
 
 	@Override
-	public void infectionDynamicsFacility(MutableEpisimPerson personLeavingFacility, EpisimFacility facility, double now, String actType) {
-		infectionDynamicsGeneralized(personLeavingFacility, facility, now);
-	}
-
-	@Override
-	public void notifyEnterVehicle(MutableEpisimPerson personEnteringVehicle, EpisimVehicle vehicle, double now) {
-		notifyEnterContainerGeneralized(personEnteringVehicle, vehicle, now);
-	}
-
-	@Override
-	public void notifyEnterFacility(MutableEpisimPerson personEnteringFacility, EpisimFacility facility, double now) {
-		notifyEnterContainerGeneralized(personEnteringFacility, facility, now);
-	}
-
-	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer<?> container, double now) {
+	public void notifyEnterContainer(MutableEpisimPerson personEntering, EpisimContainer container, double now) {
 		try {
-			if (checkPersonInContainer(personEnteringContainer, container, getRestrictions(), rnd)) {
-				contacts.computeIfAbsent(container, (k) -> new HashSet<>()).add(personEnteringContainer);
+			if (checkPersonInContainer(personEntering, container, getRestrictions(), rnd)) {
+				contacts.computeIfAbsent(container, (k) -> new HashSet<>()).add(personEntering);
 			}
 		} catch (IndexOutOfBoundsException | NullPointerException e) {
 			// these exceptions happen during init and are ignored
 		}
 	}
 
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer<?> container, double now) {
+	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
 		// no infection possible if there is only one person
 		if (iteration == 0 || container.getPersons().size() == 1) {
 
@@ -156,7 +143,7 @@ public final class PairWiseContactModel extends AbstractContactModel {
 		double jointTimeInContainer = calculateJointTimeInContainer(now, personLeavingContainer, containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
 
 		//forbid certain cross-activity interactions, keep track of contacts
-		if (container instanceof EpisimFacility) {
+		if (container.isFacility()) {
 			//home can only interact with home, leisure or work
 			if (infectionType.indexOf("home") >= 0 && infectionType.indexOf("leis") == -1 && infectionType.indexOf("work") == -1
 					&& !(leavingPersonsActivity.startsWith("home") && otherPersonsActivity.startsWith("home"))) {

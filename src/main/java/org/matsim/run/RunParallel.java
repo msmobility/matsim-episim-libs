@@ -137,7 +137,7 @@ public class RunParallel<T> implements Callable<Integer> {
 		EpisimConfigGroup episimBase = ConfigUtils.addOrGetModule(baseConfig, EpisimConfigGroup.class);
 
 		Scenario scenario = null;
-		ReplayHandler replay = null;
+		InputEventProvider replay = null;
 
 		if (noReuse) {
 			log.info("Reusing scenario and events is disabled.");
@@ -149,7 +149,7 @@ public class RunParallel<T> implements Callable<Integer> {
 			Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(base));
 
 			scenario = injector.getInstance(Scenario.class);
-			replay = injector.getInstance(ReplayHandler.class);
+			replay = injector.getInstance(InputEventProvider.class);
 		}
 
 		int i = 0;
@@ -199,9 +199,9 @@ public class RunParallel<T> implements Callable<Integer> {
 
 		private final Config config;
 		private final Scenario scenario;
-		private final ReplayHandler replay;
+		private final InputEventProvider replay;
 
-		private ParallelModule(Config config, @Nullable Scenario scenario, ReplayHandler replay) {
+		private ParallelModule(Config config, @Nullable Scenario scenario, InputEventProvider replay) {
 			this.scenario = scenario;
 			this.config = config;
 			this.replay = replay;
@@ -213,7 +213,7 @@ public class RunParallel<T> implements Callable<Integer> {
 
 			if (scenario != null) {
 				bind(Scenario.class).toInstance(scenario);
-				bind(ReplayHandler.class).toInstance(replay);
+				bind(InputEventProvider.class).toInstance(replay);
 			}
 		}
 	}
