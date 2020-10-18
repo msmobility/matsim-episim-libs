@@ -131,6 +131,10 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	 */
 	private boolean traceable;
 
+	MutableEpisimPerson(Id<Person> personId) {
+		this(personId, null, null);
+	}
+
 	MutableEpisimPerson(Id<Person> personId, Attributes attrs, EpisimReporting reporting) {
 		this(personId, attrs, true, reporting);
 	}

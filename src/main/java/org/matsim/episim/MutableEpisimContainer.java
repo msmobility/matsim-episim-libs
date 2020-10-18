@@ -85,7 +85,7 @@ public class MutableEpisimContainer implements EpisimContainer {
 	 * Creates a container that is not a vehicle.
 	 * @param containerId
 	 */
-	MutableEpisimContainer(Id<EpisimContainer> containerId) {
+	MutableEpisimContainer(Id<?> containerId) {
 		this(containerId, false);
 	}
 
@@ -227,5 +227,14 @@ public class MutableEpisimContainer implements EpisimContainer {
 	public List<MutableEpisimPerson> getPersons() {
 		// Using Collections.unmodifiableList(...) puts huge pressure on the GC if its called hundred thousand times per second
 		return personsAsList;
+	}
+
+	@Override
+	public String toString() {
+		return "MutableEpisimContainer{" +
+				"containerId=" + containerId +
+				", isVehicle=" + isVehicle +
+				", persons=" + persons.size() +
+				'}';
 	}
 }

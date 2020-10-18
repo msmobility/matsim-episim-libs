@@ -20,9 +20,7 @@
  */
 package org.matsim.episim;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
@@ -30,6 +28,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.episim.data.EpisimEventProvider;
 import org.matsim.episim.model.*;
 import org.matsim.episim.reporting.AsyncEpisimWriter;
 import org.matsim.episim.reporting.EpisimWriter;
@@ -61,6 +60,14 @@ public class EpisimModule extends AbstractModule {
 		bind(EpisimReporting.class).in(Singleton.class);
 
 		// Ah, ok, here one sees how it is plugged together.  kai, apr'20
+	}
+
+	@Provides
+	@Singleton
+	public EpisimEventProvider episimEventProvider(Provider<InputEventProvider> input, Scenario scenario, Config config,
+												   EpisimReporting reporting) {
+		// TODO other provider
+		return new EventsFromMATSimScenario(input.get(), scenario, config, reporting);
 	}
 
 	@Provides

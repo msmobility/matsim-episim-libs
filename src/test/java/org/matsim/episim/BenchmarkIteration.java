@@ -55,6 +55,7 @@ public class BenchmarkIteration {
 		// injector.getInstance(EventsManager.class).addHandler(reporting);
 
 		events.init();
+		handler.init(events);
 	}
 
 	@Benchmark

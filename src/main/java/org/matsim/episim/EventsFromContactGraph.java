@@ -7,7 +7,7 @@ import org.matsim.episim.data.EpisimEventProvider;
 import org.matsim.episim.data.PersonLeavesContainerEvent;
 
 import java.time.DayOfWeek;
-import java.util.Map;
+import java.util.Set;
 
 public class EventsFromContactGraph implements EpisimEventProvider {
 	@Override
@@ -21,12 +21,12 @@ public class EventsFromContactGraph implements EpisimEventProvider {
 	}
 
 	@Override
-	public Map<Id<Person>, MutableEpisimPerson> getPersons() {
+	public Set<Id<Person>> getPersonIds() {
 		return null;
 	}
 
 	@Override
-	public Map<Id<EpisimContainer>, ? extends EpisimContainer> getContainer() {
+	public Set<EpisimContainer> getContainer() {
 		return null;
 	}
 

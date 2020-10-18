@@ -2,10 +2,9 @@ package org.matsim.episim.data;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.episim.MutableEpisimPerson;
 
 import java.time.DayOfWeek;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Class responsible for providing episim specific events to the {@link org.matsim.episim.InfectionEventHandler}.
@@ -25,12 +24,12 @@ public interface EpisimEventProvider {
 	/**
 	 * All persons relevant for this provider. The provider is supposed to create these during init phase.
 	 */
-	Map<Id<Person>, MutableEpisimPerson> getPersons();
+	Set<Id<Person>> getPersonIds();
 
 	/**
 	 * All containers that have been created and that are relevant for the simulation.
 	 */
-	Map<Id<EpisimContainer>, ? extends EpisimContainer> getContainer();
+	Set<EpisimContainer> getContainer();
 
 	/**
 	 * Returns an iterable that provides all events for given day.

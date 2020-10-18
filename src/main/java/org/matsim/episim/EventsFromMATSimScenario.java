@@ -16,11 +16,8 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.core.router.TripStructureUtils;
-import org.matsim.episim.data.EpisimContainer;
-import org.matsim.episim.data.EpisimEventProvider;
-import org.matsim.episim.data.PersonLeavesContainerEvent;
+import org.matsim.episim.data.*;
 import org.matsim.facilities.ActivityFacility;
-import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.matsim.vehicles.Vehicle;
 
 import javax.inject.Inject;
@@ -40,14 +37,14 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	private final Map<DayOfWeek, List<Event>> events;
 
 	/**
-	 * See {@link #getPersons()}
+	 * See {@link #getPersonIds()} ()}
 	 */
 	private final Map<Id<Person>, MutableEpisimPerson> personMap = new IdMap<>(Person.class);
 
-	/**
-	 * See {@link #getContainer()}
-	 */
-	private final Map<Id<EpisimContainer>, MutableEpisimContainer> containerMap = new IdMap<>(EpisimContainer.class);
+	private final Map<Id<Vehicle>, MutableEpisimContainer> vehicleMap = new IdMap<>(Vehicle.class);
+	private final Map<Id<ActivityFacility>, MutableEpisimContainer> pseudoFacilityMap = new IdMap<>(ActivityFacility.class,
+			// the number of facility ids is not known beforehand, so we use this as initial estimate
+			(int) (Id.getNumberOfIds(Vehicle.class) * 1.3));
 
 	/**
 	 * Maps activity type to its parameter.
@@ -55,12 +52,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	 */
 	private final Map<String, MutableEpisimPerson.Activity> paramsMap = new IdentityHashMap<>();
 
-	/**
-	 * Local random, e.g. used for person initialization.
-	 */
-	private final SplittableRandom localRnd;
+
 	private final EpisimConfigGroup episimConfig;
-	private final TracingConfigGroup tracingConfig;
 	private final Scenario scenario;
 	private final EpisimReporting reporting;
 
@@ -87,9 +80,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	@Inject
 	public EventsFromMATSimScenario(InputEventProvider provider, Scenario scenario, Config config, EpisimReporting reporting) {
 		this.events = provider.getEvents();
-		this.localRnd = new SplittableRandom(config.global().getRandomSeed() + 65536);
 		this.episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
-		this.tracingConfig = ConfigUtils.addOrGetModule(config, TracingConfigGroup.class);
 		this.scenario = scenario;
 		this.reporting = reporting;
 	}
@@ -130,7 +121,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				if (event instanceof HasPersonId) {
 					if (!shouldHandlePersonEvent((HasPersonId) event)) continue;
 
-					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), this::createPerson);
+					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), MutableEpisimPerson::new);
 
 					// If a person was added late, previous days are initialized at home
 					for (int i = 1; i < day.getValue(); i++) {
@@ -146,8 +137,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				}
 
 				if (event instanceof HasFacilityId) {
-					Id<EpisimContainer> episimFacilityId = createEpisimFacilityId((HasFacilityId) event);
-					container = this.containerMap.computeIfAbsent(episimFacilityId, MutableEpisimContainer::new);
+					Id<ActivityFacility> episimFacilityId = createEpisimFacilityId((HasFacilityId) event);
+					container = this.pseudoFacilityMap.computeIfAbsent(episimFacilityId, MutableEpisimContainer::new);
 				}
 
 				if (event instanceof ActivityStartEvent) {
@@ -190,8 +181,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				if (event instanceof PersonEntersVehicleEvent) {
 					if (!shouldHandlePersonEvent((HasPersonId) event)) continue;
 
-					Id<EpisimContainer> id = createVehicleContainerId(((PersonEntersVehicleEvent) event).getVehicleId());
-					MutableEpisimContainer vehicle = this.containerMap.computeIfAbsent(id, d -> new MutableEpisimContainer(d, true));
+					MutableEpisimContainer vehicle = this.vehicleMap.computeIfAbsent(((PersonEntersVehicleEvent) event).getVehicleId(),
+							d -> new MutableEpisimContainer(d, true));
 
 					maxGroupSize.mergeInt(vehicle, groupSize.mergeInt(vehicle, 1, Integer::sum), Integer::max);
 					totalUsers.mergeInt(vehicle, 1, Integer::sum);
@@ -201,9 +192,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				} else if (event instanceof PersonLeavesVehicleEvent) {
 					if (!shouldHandlePersonEvent((HasPersonId) event)) continue;
 
-					Id<EpisimContainer> id = createVehicleContainerId(((PersonLeavesVehicleEvent) event).getVehicleId());
-
-					MutableEpisimContainer vehicle = this.containerMap.computeIfAbsent(id, d -> new MutableEpisimContainer(d, true));
+					MutableEpisimContainer vehicle = this.vehicleMap.computeIfAbsent(((PersonLeavesVehicleEvent) event).getVehicleId(),
+							d -> new MutableEpisimContainer(d, true));
 					groupSize.mergeInt(vehicle, -1, Integer::sum);
 					activityUsage.computeIfAbsent(vehicle, k -> new Object2IntOpenHashMap<>()).mergeInt("tr", 1, Integer::sum);
 
@@ -245,7 +235,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		insertStationaryAgents();
 
 		// Add missing facilities, with only stationary agents
-		for (MutableEpisimContainer facility : containerMap.values()) {
+		for (MutableEpisimContainer facility : pseudoFacilityMap.values()) {
 			if (!maxGroupSize.containsKey(facility)) {
 				totalUsers.put(facility, facility.getPersons().size());
 				maxGroupSize.put(facility, facility.getPersons().size());
@@ -275,11 +265,11 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				p.resetCurrentPositionInTrajectory(day);
 			});
 
-			containerMap.forEach((k, v) -> maxGroupSize.mergeInt(v, v.getPersons().size(), Integer::max));
+			pseudoFacilityMap.forEach((k, v) -> maxGroupSize.mergeInt(v, v.getPersons().size(), Integer::max));
 
 			for (Event event : eventsForDay) {
 				if (event instanceof HasFacilityId && event instanceof HasPersonId) {
-					MutableEpisimContainer facility = containerMap.get(((HasFacilityId) event).getFacilityId());
+					MutableEpisimContainer facility = pseudoFacilityMap.get(((HasFacilityId) event).getFacilityId());
 
 					// happens on filtered events that are not relevant
 					if (facility == null)
@@ -355,24 +345,6 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	}
 
 	/**
-	 * Create a new person and lookup attributes from scenario.
-	 */
-	private MutableEpisimPerson createPerson(Id<Person> id) {
-
-		Person person = scenario.getPopulation().getPersons().get(id);
-		Attributes attrs;
-		if (person != null) {
-			attrs = person.getAttributes();
-		} else {
-			attrs = new Attributes();
-		}
-
-		boolean traceable = localRnd.nextDouble() < tracingConfig.getEquipmentRate();
-
-		return new MutableEpisimPerson(id, attrs, traceable, reporting);
-	}
-
-	/**
 	 * Creates the home facility of a person.
 	 */
 	private MutableEpisimContainer createHomeFacility(MutableEpisimPerson person) {
@@ -380,30 +352,30 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		if (homeId == null)
 			homeId = "home_of_" + person.getPersonId().toString();
 
-		Id<EpisimContainer> facilityId = Id.create(homeId, EpisimContainer.class);
+		Id<ActivityFacility> facilityId = Id.create(homeId, ActivityFacility.class);
 		// add facility that might not exist yet
-		return this.containerMap.computeIfAbsent(facilityId, MutableEpisimContainer::new);
+		return this.pseudoFacilityMap.computeIfAbsent(facilityId, MutableEpisimContainer::new);
 	}
 
 	private MutableEpisimPerson.Activity createActivityType(String actType) {
 		return new MutableEpisimPerson.Activity(actType, episimConfig.selectInfectionParams(actType));
 	}
 
-	private Id<EpisimContainer> createEpisimFacilityId(HasFacilityId event) {
+	private Id<ActivityFacility> createEpisimFacilityId(HasFacilityId event) {
 		if (episimConfig.getFacilitiesHandling() == EpisimConfigGroup.FacilitiesHandling.snz) {
 			Id<ActivityFacility> id = event.getFacilityId();
 			if (id == null)
 				throw new IllegalStateException("No facility id present. Please switch to episimConfig.setFacilitiesHandling( EpisimConfigGroup.FacilitiesHandling.bln ) ");
 
-			return Id.create(id.toString(), EpisimContainer.class);
-
+			return id;
 		} else if (episimConfig.getFacilitiesHandling() == EpisimConfigGroup.FacilitiesHandling.bln) {
+			// TODO: this has poor performance and should be preprocessing...
 			if (event instanceof ActivityStartEvent) {
 				ActivityStartEvent theEvent = (ActivityStartEvent) event;
-				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), EpisimContainer.class);
+				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
 			} else if (event instanceof ActivityEndEvent) {
 				ActivityEndEvent theEvent = (ActivityEndEvent) event;
-				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), EpisimContainer.class);
+				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
 			} else {
 				throw new IllegalStateException("unexpected event type=" + ((Event) event).getEventType());
 			}
@@ -413,20 +385,14 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 	}
 
-	private Id<EpisimContainer> createVehicleContainerId(Id<Vehicle> vehicleId) {
-		return Id.create(vehicleId.toString(), EpisimContainer.class);
-	}
-
-	private void handlePersonTrajectory(Id<Person> personId, String trajectoryElement) {
+	private void handlePersonTrajectory(Id<Person> personId, MutableEpisimPerson.Activity trajectoryElement) {
 		MutableEpisimPerson person = personMap.get(personId);
 
 		if (person.getCurrentPositionInTrajectory() + 1 == person.getTrajectory().size()) {
 			return;
 		}
 		person.incrementCurrentPositionInTrajectory();
-
-		MutableEpisimPerson.Activity act = paramsMap.get(trajectoryElement);
-		person.addToTrajectory(act);
+		person.addToTrajectory(trajectoryElement);
 	}
 
 	/**
@@ -443,13 +409,13 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 				if (homeId != null) {
 
-					Id<EpisimContainer> facilityId = Id.create(homeId, EpisimContainer.class);
-					MutableEpisimContainer facility = containerMap.computeIfAbsent(facilityId, MutableEpisimContainer::new);
-					MutableEpisimPerson episimPerson = personMap.computeIfAbsent(p.getId(), this::createPerson);
+					Id<ActivityFacility> facilityId = Id.create(homeId, ActivityFacility.class);
+					MutableEpisimContainer facility = pseudoFacilityMap.computeIfAbsent(facilityId, MutableEpisimContainer::new);
+					MutableEpisimPerson episimPerson = personMap.computeIfAbsent(p.getId(), MutableEpisimPerson::new);
 
 					// Person stays here the whole week
 					for (DayOfWeek day : DayOfWeek.values()) {
-						episimPerson.setFirstFacilityId(facilityId, day);
+						episimPerson.setFirstFacilityId(facility.getContainerId(), day);
 					}
 
 					episimPerson.addToTrajectory(new MutableEpisimPerson.Activity("home", paramsMap.get("home").params));
@@ -480,15 +446,15 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		MutableEpisimPerson episimPerson = this.personMap.get(activityStartEvent.getPersonId());
 
 		// create pseudo facility id that includes the activity type:
-		Id<EpisimContainer> episimFacilityId = createEpisimFacilityId(activityStartEvent);
+		Id<ActivityFacility> episimFacilityId = createEpisimFacilityId(activityStartEvent);
 
 		// find the facility
-		MutableEpisimContainer episimFacility = this.containerMap.get(episimFacilityId);
+		MutableEpisimContainer episimFacility = this.pseudoFacilityMap.get(episimFacilityId);
 
 		// add person to facility
 		episimFacility.addPerson(episimPerson, now);
 
-		handlePersonTrajectory(episimPerson.getPersonId(), activityStartEvent.getActType());
+		handlePersonTrajectory(episimPerson.getPersonId(), paramsMap.get(activityStartEvent.getActType()));
 	}
 
 
@@ -502,10 +468,10 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		}
 
 		MutableEpisimPerson episimPerson = this.personMap.get(activityEndEvent.getPersonId());
-		Id<EpisimContainer> episimFacilityId = createEpisimFacilityId(activityEndEvent);
+		Id<ActivityFacility> episimFacilityId = createEpisimFacilityId(activityEndEvent);
 
 		MutableEpisimContainer episimFacility = episimPerson.getCurrentContainer();
-		if (!episimFacility.equals(containerMap.get(episimFacilityId))) {
+		if (!episimFacility.equals(pseudoFacilityMap.get(episimFacilityId))) {
 			throw new IllegalStateException("Person=" + episimPerson.getPersonId().toString() + " has activity end event at facility=" + episimFacilityId + " but actually is at facility=" + episimFacility.getContainerId().toString());
 		}
 
@@ -514,7 +480,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 		episimFacility.removePerson(episimPerson);
 
-		handlePersonTrajectory(episimPerson.getPersonId(), activityEndEvent.getActType());
+		handlePersonTrajectory(episimPerson.getPersonId(), paramsMap.get(activityEndEvent.getActType()));
 
 	}
 
@@ -531,7 +497,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		MutableEpisimPerson episimPerson = this.personMap.get(entersVehicleEvent.getPersonId());
 
 		// find the vehicle:
-		MutableEpisimContainer episimVehicle = this.containerMap.get(entersVehicleEvent.getVehicleId());
+		MutableEpisimContainer episimVehicle = this.vehicleMap.get(entersVehicleEvent.getVehicleId());
 
 		// add person to vehicle and memorize entering time:
 		episimVehicle.addPerson(episimPerson, now);
@@ -542,13 +508,12 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 //		double now = leavesVehicleEvent.getTime();
 		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), leavesVehicleEvent.getTime(), 0);
 
-
 		if (!shouldHandlePersonEvent(leavesVehicleEvent)) {
 			return;
 		}
 
 		// find vehicle:
-		MutableEpisimContainer episimVehicle = this.containerMap.get(leavesVehicleEvent.getVehicleId());
+		MutableEpisimContainer episimVehicle = this.vehicleMap.get(leavesVehicleEvent.getVehicleId());
 
 		MutableEpisimPerson episimPerson = this.personMap.get(leavesVehicleEvent.getPersonId());
 
@@ -579,8 +544,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 			MutableEpisimContainer container = person.getCurrentContainer();
 			Id<?> lastFacilityId = container.getContainerId();
 
-			if (!container.isVehicle() && this.containerMap.containsKey(lastFacilityId) && !firstFacilityId.equals(lastFacilityId)) {
-				MutableEpisimContainer lastFacility = this.containerMap.get(lastFacilityId);
+			if (!container.isVehicle() && this.pseudoFacilityMap.containsKey(lastFacilityId) && !firstFacilityId.equals(lastFacilityId)) {
+				MutableEpisimContainer lastFacility = this.pseudoFacilityMap.get(lastFacilityId);
 
 				// index of last activity at previous day
 				int index = person.getEndOfDay(day.minus(1));
@@ -595,19 +560,19 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				}
 
 				lastFacility.removePerson(person);
-				MutableEpisimContainer firstFacility = this.containerMap.get(firstFacilityId);
+				MutableEpisimContainer firstFacility = this.pseudoFacilityMap.get(firstFacilityId);
 				firstFacility.addPerson(person, now);
 
-			} else if (container.isVehicle() && this.containerMap.containsKey(lastFacilityId)) {
-				MutableEpisimContainer lastVehicle = this.containerMap.get(lastFacilityId);
+			} else if (container.isVehicle() && this.pseudoFacilityMap.containsKey(lastFacilityId)) {
+				MutableEpisimContainer lastVehicle = this.pseudoFacilityMap.get(lastFacilityId);
 				person.addSpentTime("pt", now - lastVehicle.getContainerEnteringTime(person.getPersonId()));
 
 				lastVehicle.removePerson(person);
-				MutableEpisimContainer firstFacility = this.containerMap.get(firstFacilityId);
+				MutableEpisimContainer firstFacility = this.pseudoFacilityMap.get(firstFacilityId);
 				firstFacility.addPerson(person, now);
 			}
 		} else {
-			MutableEpisimContainer firstFacility = this.containerMap.get(firstFacilityId);
+			MutableEpisimContainer firstFacility = this.pseudoFacilityMap.get(firstFacilityId);
 			firstFacility.addPerson(person, now);
 		}
 	}
@@ -618,20 +583,164 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	}
 
 	@Override
-	public Map<Id<Person>, MutableEpisimPerson> getPersons() {
-		return personMap;
+	public Set<Id<Person>> getPersonIds() {
+		return personMap.keySet();
 	}
 
 	@Override
-	public Map<Id<EpisimContainer>, ? extends EpisimContainer> getContainer() {
-		return containerMap;
+	public Set<EpisimContainer> getContainer() {
+		HashSet<EpisimContainer> result = new HashSet<>();
+
+		result.addAll(pseudoFacilityMap.values());
+		result.addAll(vehicleMap.values());
+
+		return result;
 	}
 
 	@Override
 	public Iterable<PersonLeavesContainerEvent> forDay(DayOfWeek day) {
 
-		// TODO ##################
+		// TODO: needs to be in iterator and generate events
+		// TODO ###################
+		for (MutableEpisimPerson person : personMap.values()) {
+			checkAndHandleEndOfNonCircularTrajectory(person, day);
+			person.resetCurrentPositionInTrajectory(day);
+		}
 
-		return null;
+		List<Event> events = this.events.get(day);
+		return () -> new EventsIterator(events.iterator());
 	}
+
+	/**
+	 * Generates events based on matsim input events.
+	 */
+	private class EventsIterator implements Iterator<PersonLeavesContainerEvent> {
+
+		private final Iterator<Event> it;
+		private final PersonLeaves event = new PersonLeaves();
+
+
+		public EventsIterator(Iterator<Event> events) {
+			this.it = events;
+		}
+
+		@Override
+		public boolean hasNext() {
+
+			// remove person from previous event
+			if (event.container != null) {
+				event.container.removePerson(event.person);
+
+				if (event.container.isFacility())
+					handlePersonTrajectory(event.person.getPersonId(),
+							event.person.getTrajectory().get(event.person.getCurrentPositionInTrajectory()));
+
+
+				event.reset();
+			}
+
+			while (it.hasNext()) {
+
+				Event next = it.next();
+
+				// no action necessary
+				if (next instanceof ActivityStartEvent) {
+					handleEvent((ActivityStartEvent) next);
+				} else if (next instanceof PersonEntersVehicleEvent)
+					handleEvent((PersonEntersVehicleEvent) next);
+				else if (next instanceof ActivityEndEvent) {
+
+					ActivityEndEvent e = (ActivityEndEvent) next;
+
+					if (!shouldHandleActivityEvent(e, e.getActType()))
+						continue;
+
+					Id<ActivityFacility> episimFacilityId = createEpisimFacilityId((HasFacilityId) next);
+					MutableEpisimContainer episimContainer = pseudoFacilityMap.get(episimFacilityId);
+					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
+
+					event.setContext((int) e.getTime(), episimPerson, episimContainer);
+					return true;
+				} else if (next instanceof PersonLeavesVehicleEvent) {
+
+					PersonLeavesVehicleEvent e = (PersonLeavesVehicleEvent) next;
+
+					if (!shouldHandlePersonEvent(e))
+						continue;
+
+					MutableEpisimContainer episimContainer = vehicleMap.get(e.getVehicleId());
+					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
+
+					event.setContext((int) e.getTime(), episimPerson, episimContainer);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		@Override
+		public PersonLeavesContainerEvent next() {
+			return event;
+		}
+	}
+
+	private static class PersonLeaves implements PersonLeavesContainerEvent {
+
+		private int now;
+		private MutableEpisimPerson person;
+		private MutableEpisimContainer container;
+
+		private PersonLeaves setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
+			this.now = now;
+			this.person = person;
+			this.container = container;
+			return this;
+		}
+
+		private void reset() {
+			this.now = -1;
+			this.person = null;
+			this.container = null;
+		}
+
+		@Override
+		public EpisimContainer getContainer() {
+			return container;
+		}
+
+		@Override
+		public EpisimConfigGroup.InfectionParams getActivity() {
+			return person.getTrajectory().get(person.getCurrentPositionInTrajectory()).params;
+		}
+
+		@Override
+		public int getLeaveTime() {
+			return now;
+		}
+
+		@Override
+		public int getEnterTime() {
+			return (int) container.getContainerEnteringTime(person.getPersonId());
+		}
+
+		@Override
+		public int getNumberOfContacts() {
+			return container.getPersons().size() - 1;
+		}
+
+		@Override
+		public Iterator<PersonContact> iterator() {
+			// TODO
+			// TODO ##############################
+			return null;
+		}
+
+		@Override
+		public Id<Person> getPersonId() {
+			return person.getPersonId();
+		}
+	}
+
+
 }

@@ -94,9 +94,7 @@ public final class EpisimRunner {
 		ControlerUtils.checkConfigConsistencyAndWriteToLog(config, "Just before starting iterations");
 
 		eventProvider.init();
-
-		// TODO: needed?
-		// handler.init(replay.getEvents());
+		handler.init(eventProvider);
 
 		Path output = Path.of(config.controler().getOutputDirectory());
 

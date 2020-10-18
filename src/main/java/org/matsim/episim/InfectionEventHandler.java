@@ -121,6 +121,11 @@ public final class InfectionEventHandler implements Externalizable {
 	 */
 	private final Scenario scenario;
 
+	/**
+	 * Local random, e.g. used for person initialization.
+	 */
+	private final SplittableRandom localRnd;
+
 	private final Config config;
 	private final EpisimConfigGroup episimConfig;
 	private final TracingConfigGroup tracingConfig;
@@ -156,6 +161,7 @@ public final class InfectionEventHandler implements Externalizable {
 		this.restrictions = episimConfig.createInitialRestrictions();
 		this.reporting = reporting;
 		this.rnd = rnd;
+		this.localRnd = new SplittableRandom(config.global().getRandomSeed() + 65536);
 		this.progressionModel = progressionModel;
 		this.contactModel = contactModel;
 		this.initialInfections = initialInfections;
@@ -182,15 +188,35 @@ public final class InfectionEventHandler implements Externalizable {
 	 * Initializes all needed data structures before the simulation can start.
 	 * This *always* needs to be called before starting.
 	 */
-	public void init(EpisimEventProvider provider) {
+	void init(EpisimEventProvider provider) {
 
-		personMap = provider.getPersons();
+		for (Id<Person> id : provider.getPersonIds()) {
+			personMap.put(id, createPerson(id));
+		}
+
 		containerMap = (Map<Id<EpisimContainer>, EpisimContainer>) provider.getContainer();
 
 		policy.init(episimConfig.getStartDate(), ImmutableMap.copyOf(this.restrictions));
 		init = true;
 	}
 
+	/**
+	 * Create a new person and lookup attributes from scenario.
+	 */
+	private MutableEpisimPerson createPerson(Id<Person> id) {
+
+		Person person = scenario.getPopulation().getPersons().get(id);
+		Attributes attrs;
+		if (person != null) {
+			attrs = person.getAttributes();
+		} else {
+			attrs = new Attributes();
+		}
+
+		boolean traceable = localRnd.nextDouble() < tracingConfig.getEquipmentRate();
+
+		return new MutableEpisimPerson(id, attrs, traceable, reporting);
+	}
 
 	/**
 	 * Called *before* the start of an iteration.
@@ -230,11 +256,6 @@ public final class InfectionEventHandler implements Externalizable {
 		contactModel.setRestrictionsForIteration(iteration, im);
 		reporting.reportRestrictions(restrictions, iteration, report.date);
 
-	}
-
-
-	public Collection<MutableEpisimPerson> getPersons() {
-		return Collections.unmodifiableCollection(personMap.values());
 	}
 
 	@Override
