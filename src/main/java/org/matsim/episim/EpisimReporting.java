@@ -361,7 +361,8 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 * @param infector      infector
 	 * @param infectionType activities of both persons
 	 */
-	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType, MutableEpisimContainer container) {
+	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType,
+								EpisimContainer container, int groupSize) {
 
 		int cnt = specificInfectionsCnt.getOpaque();
 		// This counter is used by many threads, for better performance we use very weak memory guarantees here
@@ -381,7 +382,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		array[InfectionEventsWriterFields.infected.ordinal()] = personWrapper.getPersonId().toString();
 		array[InfectionEventsWriterFields.infectionType.ordinal()] = infectionType;
 		array[InfectionEventsWriterFields.date.ordinal()] = memorizedDate;
-		array[InfectionEventsWriterFields.groupSize.ordinal()] = Long.toString(container.getPersons().size());
+		array[InfectionEventsWriterFields.groupSize.ordinal()] = Long.toString(groupSize);
 		array[InfectionEventsWriterFields.facility.ordinal()] = container.getContainerId().toString();
 
 		writer.append(infectionEvents, array);
@@ -393,16 +394,15 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 *
 	 * @see EpisimContactEvent
 	 */
-	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, MutableEpisimContainer container,
-							  StringBuilder actType, double duration) {
+	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, EpisimContainer container,
+							  StringBuilder actType, double duration, int groupSize) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
 			manager.processEvent(new EpisimContactEvent(now, person.getPersonId(), contactPerson.getPersonId(), container.getContainerId(),
-					actType.toString(), duration, container.getPersons().size()));
+					actType.toString(), duration, groupSize));
 		}
 
 	}
-
 
 	/**
 	 * Report the successful tracing between two persons.

@@ -370,11 +370,11 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		trajectory.add(trajectoryElement);
 	}
 
-	public List<Activity> getTrajectory() {
+	List<Activity> getTrajectory() {
 		return trajectory;
 	}
 
-	public int getCurrentPositionInTrajectory() {
+	int getCurrentPositionInTrajectory() {
 		return this.currentPositionInTrajectory;
 	}
 
@@ -411,7 +411,7 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		firstFacilityId[target.getValue() - 1] = firstFacilityId[source.getValue() - 1];
 	}
 
-	public MutableEpisimContainer getCurrentContainer() {
+	MutableEpisimContainer getCurrentContainer() {
 		return currentContainer;
 	}
 
@@ -436,11 +436,11 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 	/**
 	 * Whether person is currently in a container.
 	 */
-	public boolean isInContainer() {
+	boolean isInContainer() {
 		return currentContainer != null;
 	}
 
-	public void removeCurrentContainer(MutableEpisimContainer container) {
+	void removeCurrentContainer(MutableEpisimContainer container) {
 		if (this.currentContainer != container)
 			throw new IllegalStateException(String.format("Person is currently in %s, but not in removed one %s", currentContainer, container));
 
@@ -455,8 +455,8 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		this.firstFacilityId[day.getValue() - 1] = firstFacilityId;
 	}
 
-	public void setInfectionContainer(MutableEpisimContainer container) {
-		this.infectionContainer =container.getContainerId();
+	public void setInfectionContainer(EpisimContainer container) {
+		this.infectionContainer = container.getContainerId();
 	}
 
 	public Id<EpisimContainer> getInfectionContainer() {

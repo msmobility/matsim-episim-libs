@@ -31,6 +31,8 @@ import java.util.*;
 
 import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.data.EpisimContainer;
+import org.matsim.episim.data.PersonEntersContainerEvent;
+import org.matsim.episim.data.PersonLeavesContainerEvent;
 
 /**
  * Model where persons are only interacting pairwise.
@@ -54,8 +56,8 @@ public final class DirectContactModel extends AbstractContactModel {
 	 */
 	private final StringBuilder buffer = new StringBuilder();
 
-	private final Map<MutableEpisimContainer, MutableEpisimPerson> singlePersons = new IdentityHashMap<>();
-	private final Map<MutableEpisimContainer, List<Group>> groups = new IdentityHashMap<>();
+	private final Map<EpisimContainer, MutableEpisimPerson> singlePersons = new IdentityHashMap<>();
+	private final Map<EpisimContainer, List<Group>> groups = new IdentityHashMap<>();
 
 	@Inject
 		/*package*/ DirectContactModel(SplittableRandom rnd, Config config, TracingConfigGroup tracingConfig,
@@ -65,18 +67,15 @@ public final class DirectContactModel extends AbstractContactModel {
 		this.traceSusceptible = tracingConfig.getTraceSusceptible();
 	}
 
-	@Override
-	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
-		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
-	}
 
 	@Override
-	public void notifyEnterContainer(MutableEpisimPerson personEntering, EpisimContainer container, double now) {
-		if (container.isFacility())
-			notifyEnterContainerGeneralized(personEntering, (MutableEpisimContainer) container, now);
+	public void notifyEnterContainer(PersonEntersContainerEvent event, double now) {
+
+		if (event.getContainer().isFacility())
+			notifyEnterContainerGeneralized(persons.get(event.getPersonId()), event.getContainer(), now);
 	}
 
-	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, MutableEpisimContainer container, double now) {
+	private void notifyEnterContainerGeneralized(MutableEpisimPerson personEnteringContainer, EpisimContainer container, double now) {
 
 		// this can happen because persons are not removed during initialization
 		if (findGroup(container, personEnteringContainer) != null)
@@ -92,7 +91,7 @@ public final class DirectContactModel extends AbstractContactModel {
 		}
 	}
 
-	private Group findGroup(MutableEpisimContainer container, MutableEpisimPerson person) {
+	private Group findGroup(EpisimContainer container, MutableEpisimPerson person) {
 
 		if (!groups.containsKey(container))
 			return null;
@@ -106,19 +105,24 @@ public final class DirectContactModel extends AbstractContactModel {
 		return null;
 	}
 
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
+	@Override
+	public void infectionDynamicsContainer(PersonLeavesContainerEvent event, double now) {
+
 		// no infection possible if there is only one person
-		if (iteration == 0 || container.getPersons().size() == 1) {
-			removePersonFromGroups(container, personLeavingContainer, now);
+		if (iteration == 0 || event.getNumberOfContacts() == 0) {
+			removePersonFromGroups(event.getContainer(), persons.get(event.getPersonId()), now);
 			return;
 		}
+
+		MutableEpisimPerson personLeavingContainer = persons.get(event.getPersonId());
+		EpisimContainer container = event.getContainer();
 
 		if (singlePersons.get(container) == personLeavingContainer) {
 			singlePersons.remove(container);
 			return;
 		}
 
-		if (!personRelevantForTrackingOrInfectionDynamics(personLeavingContainer, container, getRestrictions(), rnd)) {
+		if (!personRelevantForTrackingOrInfectionDynamics(personLeavingContainer, event, getRestrictions(), rnd)) {
 			removePersonFromGroups(container, personLeavingContainer, now);
 			// yyyyyy hat in diesem Modell die Konsequenz, dass, wenn jemand zu Hause bleibt, die andere Person alleine rumsitzt.  Somewhat plausible in public
 			// transport; not plausible in restaurant.
@@ -132,7 +136,7 @@ public final class DirectContactModel extends AbstractContactModel {
 
 		MutableEpisimPerson contactPerson = group.getKey();
 
-		if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, container, getRestrictions(), rnd)) {
+		if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, event, getRestrictions(), rnd)) {
 			return;
 		}
 
@@ -151,8 +155,10 @@ public final class DirectContactModel extends AbstractContactModel {
 				&& contactPerson.getDiseaseStatus() == DiseaseStatus.susceptible)
 			return;
 
-		String leavingPersonsActivity = personLeavingContainer.getTrajectory().get(personLeavingContainer.getCurrentPositionInTrajectory()).actType;
-		String otherPersonsActivity = contactPerson.getTrajectory().get(contactPerson.getCurrentPositionInTrajectory()).actType;
+		String leavingPersonsActivity = event.getActivity().getContainerName();
+
+		// TODO: does not store performed activities
+		String otherPersonsActivity = event.getActivity().getContainerName();
 
 		StringBuilder infectionType = getInfectionType(buffer, container, leavingPersonsActivity, otherPersonsActivity);
 
@@ -184,7 +190,7 @@ public final class DirectContactModel extends AbstractContactModel {
 
 			// Only a subset of contacts are reported at the moment
 			// tracking has to be enabled to report more contacts
-			reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer);
+			reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer, event.getNumberOfContacts());
 		}
 
 		if (!AbstractContactModel.personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
@@ -214,14 +220,14 @@ public final class DirectContactModel extends AbstractContactModel {
 			double prob = infectionModel.calcInfectionProbability(personLeavingContainer, contactPerson, getRestrictions(),
 					leavingParams, contactParams, jointTimeInContainer);
 			if (rnd.nextDouble() < prob)
-				infectPerson(personLeavingContainer, contactPerson, now, infectionType, container);
+				infectPerson(personLeavingContainer, contactPerson, now, infectionType, container, event.getNumberOfContacts());
 
 		} else {
 			double prob = infectionModel.calcInfectionProbability(contactPerson, personLeavingContainer, getRestrictions(),
 					contactParams, leavingParams, jointTimeInContainer);
 
 			if (rnd.nextDouble() < prob)
-				infectPerson(contactPerson, personLeavingContainer, now, infectionType, container);
+				infectPerson(contactPerson, personLeavingContainer, now, infectionType, container, event.getNumberOfContacts());
 		}
 //		}
 	}
@@ -231,7 +237,7 @@ public final class DirectContactModel extends AbstractContactModel {
 	 *
 	 * @return contact person if person was in group.
 	 */
-	private Pair<MutableEpisimPerson, Double> removePersonFromGroups(MutableEpisimContainer container, MutableEpisimPerson personLeavingContainer, double time) {
+	private Pair<MutableEpisimPerson, Double> removePersonFromGroups(EpisimContainer container, MutableEpisimPerson personLeavingContainer, double time) {
 		if (singlePersons.get(container) == personLeavingContainer) {
 			singlePersons.remove(container);
 			return null;

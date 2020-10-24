@@ -31,7 +31,7 @@ public class PersonEntersContainerEventImpl implements PersonEntersContainerEven
 	}
 
 	@Override
-	public int getEnterTime() {
+	public int getTime() {
 		return enterTime;
 	}
 

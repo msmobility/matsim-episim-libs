@@ -5,11 +5,13 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
 import sun.misc.Unsafe;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -208,7 +210,7 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			it.setPersonId(event.getPersonId().index());
 			it.setActivity(event.getActivity());
 			it.setEnterTime(event.getEnterTime());
-			it.setLeaveTime(event.getLeaveTime());
+			it.setLeaveTime(event.getTime());
 			it.setNumberOfContacts(event.getNumberOfContacts());
 
 			for (PersonContact pc : event) {
@@ -351,7 +353,19 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 			UNSAFE.putByte(addr + 8, activityMap.getByte(param));
 		}
 
-		public int getLeaveTime() {
+		@Nullable
+		@Override
+		public EpisimConfigGroup.InfectionParams getNextActivity() {
+			throw new NotImplementedException("TODO");
+		}
+
+		@Nullable
+		@Override
+		public EpisimConfigGroup.InfectionParams getPrevActivity() {
+			throw new NotImplementedException("TODO");
+		}
+
+		public int getTime() {
 			return Short.toUnsignedInt(UNSAFE.getShort(addr + 9)) >> 2;
 		}
 
@@ -380,6 +394,11 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 
 		public int getNumberOfContacts() {
 			return Short.toUnsignedInt(UNSAFE.getShort(addr + 17));
+		}
+
+		@Override
+		public PersonContact getContact(int index) {
+			throw new NotImplementedException("TODO");
 		}
 
 		private void setNumberOfContacts(int n) {

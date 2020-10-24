@@ -30,6 +30,8 @@ import java.util.SplittableRandom;
 
 import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.data.EpisimContainer;
+import org.matsim.episim.data.PersonContact;
+import org.matsim.episim.data.PersonLeavesContainerEvent;
 
 /**
  * Variant of the {@link DefaultContactModel} with symmetric interactions.
@@ -67,18 +69,17 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 	}
 
 	@Override
-	public void infectionDynamicsContainer(MutableEpisimPerson personLeaving, EpisimContainer container, double now) {
-		infectionDynamicsGeneralized(personLeaving, (MutableEpisimContainer) container, now);
-	}
-
-	private void infectionDynamicsGeneralized(MutableEpisimPerson personLeavingContainer, MutableEpisimContainer container, double now) {
+	public void infectionDynamicsContainer(PersonLeavesContainerEvent event, double now) {
 
 		// no infection possible if there is only one person
-		if (iteration == 0 || container.getPersons().size() == 1) {
+		if (iteration == 0 || event.getNumberOfContacts() == 0) {
 			return;
 		}
 
-		if (!personRelevantForTrackingOrInfectionDynamics(personLeavingContainer, container, getRestrictions(), rnd)) {
+		MutableEpisimPerson personLeavingContainer = persons.get(event.getPersonId());
+		EpisimContainer container = event.getContainer();
+
+		if (!personRelevantForTrackingOrInfectionDynamics(personLeavingContainer, event, getRestrictions(), rnd)) {
 			return;
 		}
 
@@ -87,29 +88,31 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 
 		EpisimConfigGroup.InfectionParams leavingParams = null;
 
-		for( MutableEpisimPerson contactPerson : container.getPersons() ){
-
-			// no contact with self, especially no tracing
-			if (personLeavingContainer == contactPerson) {
-				continue;
-			}
-
-			int maxPersonsInContainer = (int) (container.getMaxGroupSize() * episimConfig.getSampleSize());
-			// typical size is undefined if no vehicle file is used
-			if ( container.isVehicle() && container.getTypicalCapacity() > -1) {
-				maxPersonsInContainer = (int) (container.getTypicalCapacity() * episimConfig.getSampleSize());
+		int maxPersonsInContainer = (int) (container.getMaxGroupSize() * episimConfig.getSampleSize());
+		// typical size is undefined if no vehicle file is used
+		if ( container.isVehicle() && container.getTypicalCapacity() > -1) {
+			maxPersonsInContainer = (int) (container.getTypicalCapacity() * episimConfig.getSampleSize());
 //				if ( container.getMaxGroupSize() > container.getTypicalCapacity() ) {
 //					log.warn("yyyyyy: vehicleId={}: maxGroupSize={} is larger than typicalCapacity={}; need to find organized answer to this.",
 //							container.getContainerId(), container.getMaxGroupSize(), container.getTypicalCapacity() );
 //				}
-			}
+		}
 
-			// it may happen that persons enter and leave an container at the same time
-			// effectively they have a joint time of 0 and will not count towards maximum group size
-			// still the size of the list of persons in the container may be larger than max group size
-			if (maxPersonsInContainer <= 1) {
-				log.debug("maxPersonsInContainer is={} even though there are {} persons in container={}", maxPersonsInContainer, container.getPersons().size(), container.getContainerId());
-				// maxPersonsInContainer = container.getPersons().size();
+		// it may happen that persons enter and leave an container at the same time
+		// effectively they have a joint time of 0 and will not count towards maximum group size
+		// still the size of the list of persons in the container may be larger than max group size
+		if (maxPersonsInContainer <= 1) {
+			log.debug("maxPersonsInContainer is={} even though there are {} persons in container={}", maxPersonsInContainer, event.getNumberOfContacts(), container.getContainerId());
+			// maxPersonsInContainer = container.getPersons().size();
+		}
+
+		for( PersonContact contact : event ){
+
+			MutableEpisimPerson contactPerson = persons.get(contact.getContactPerson());
+
+			// no contact with self, especially no tracing
+			if (personLeavingContainer == contactPerson) {
+				continue;
 			}
 
 			if ( rnd.nextDouble() >= episimConfig.getMaxContacts()/(maxPersonsInContainer-1) ) {
@@ -118,7 +121,7 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 			// since every pair of persons interacts only once, there is now a constant interaction probability per pair
 			// if we want superspreading events, then maxInteractions needs to be much larger than 3 or 10.
 
-			if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, container, getRestrictions(), rnd)) {
+			if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, event, getRestrictions(), rnd)) {
 				continue;
 			}
 
@@ -137,14 +140,12 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 					&& contactPerson.getDiseaseStatus() == DiseaseStatus.susceptible)
 				continue;
 
-			String leavingPersonsActivity = personLeavingContainer.getTrajectory().get(personLeavingContainer.getCurrentPositionInTrajectory()).actType;
-			String otherPersonsActivity = contactPerson.getTrajectory().get(contactPerson.getCurrentPositionInTrajectory()).actType;
+			String leavingPersonsActivity = event.getActivity().getContainerName();
+			String otherPersonsActivity = contact.getContactPersonActivity().getContainerName();
 
 			StringBuilder infectionType = getInfectionType(buffer, container, leavingPersonsActivity, otherPersonsActivity);
 
-			double containerEnterTimeOfPersonLeaving = container.getContainerEnteringTime(personLeavingContainer.getPersonId());
-			double containerEnterTimeOfOtherPerson = container.getContainerEnteringTime(contactPerson.getPersonId());
-			double jointTimeInContainer = calculateJointTimeInContainer(now, personLeavingContainer, containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
+			double jointTimeInContainer = calculateJointTimeInContainer(now, contact);
 
 			//forbid certain cross-activity interactions, keep track of contacts
 			if (container.isFacility()) {
@@ -164,7 +165,7 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 
 				// Only a subset of contacts are reported at the moment
 				// tracking has to be enabled to report more contacts
-				reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer);
+				reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer, event.getNumberOfContacts());
 			}
 
 			if (!AbstractContactModel.personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
@@ -178,18 +179,8 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 					contactPerson.daysSince(DiseaseStatus.contagious, iteration) > 4))
 				continue;
 
-			// persons leaving their first-ever activity have no starting time for that activity.  Need to hedge against that.  Since all persons
-			// start healthy (the first seeds are set at enterVehicle), we can make some assumptions.
-			if (containerEnterTimeOfPersonLeaving < 0 && containerEnterTimeOfOtherPerson < 0) {
-				throw new IllegalStateException("should not happen");
-				// should only happen at first activity.  However, at first activity all persons are susceptible.  So the only way we
-				// can get here is if an infected person entered the container and is now leaving again, while the other person has been in the
-				// container from the beginning.  ????  kai, mar'20
-			}
 
 			if (jointTimeInContainer < 0 || jointTimeInContainer > 86400 * 7) {
-				log.warn(containerEnterTimeOfPersonLeaving);
-				log.warn(containerEnterTimeOfOtherPerson);
 				log.warn(now);
 				throw new IllegalStateException("joint time in container is not plausible for personLeavingContainer=" + personLeavingContainer.getPersonId() + " and contactPerson=" + contactPerson.getPersonId() + ". Joint time is=" + jointTimeInContainer);
 			}
@@ -208,14 +199,14 @@ public final class OldSymmetricContactModel extends AbstractContactModel {
 				double prob = infectionModel.calcInfectionProbability(personLeavingContainer, contactPerson, getRestrictions(),
 						leavingParams, contactParams, jointTimeInContainer);
 				if (rnd.nextDouble() < prob)
-					infectPerson(personLeavingContainer, contactPerson, now, infectionType, container);
+					infectPerson(personLeavingContainer, contactPerson, now, infectionType, container, event.getNumberOfContacts());
 
 			} else {
 				double prob = infectionModel.calcInfectionProbability(contactPerson, personLeavingContainer, getRestrictions(),
 						contactParams, leavingParams, jointTimeInContainer);
 
 				if (rnd.nextDouble() < prob)
-					infectPerson(contactPerson, personLeavingContainer, now, infectionType, container);
+					infectPerson(contactPerson, personLeavingContainer, now, infectionType, container, event.getNumberOfContacts());
 			}
 		}
 	}

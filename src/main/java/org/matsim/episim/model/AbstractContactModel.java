@@ -20,15 +20,14 @@
  */
 package org.matsim.episim.model;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.episim.*;
-import org.matsim.episim.data.DiseaseStatus;
-import org.matsim.episim.data.EpisimContainer;
-import org.matsim.episim.data.QuarantineStatus;
+import org.matsim.episim.data.*;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo;
 
@@ -65,7 +64,14 @@ public abstract class AbstractContactModel implements ContactModel {
 	 */
 	protected final InfectionModel infectionModel;
 
+	/**
+	 * Map of all persons.
+	 */
+	protected Map<Id<Person>, MutableEpisimPerson> persons;
+
 	protected int iteration;
+
+
 	private Map<String, Restriction> restrictions;
 
 
@@ -114,7 +120,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	 * Attention: In order to re-use the underlying object, this function returns a buffer.
 	 * Be aware that the old result will be overwritten, when the function is called multiple times.
 	 */
-	protected static StringBuilder getInfectionType(StringBuilder buffer, MutableEpisimContainer container, String leavingPersonsActivity,
+	protected static StringBuilder getInfectionType(StringBuilder buffer, EpisimContainer container, String leavingPersonsActivity,
 													String otherPersonsActivity) {
 		buffer.setLength(0);
 		if (!container.isVehicle()) {
@@ -128,7 +134,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	/**
 	 * Get the relevant infection parameter based on container and activity and person.
 	 */
-	protected EpisimConfigGroup.InfectionParams getInfectionParams(MutableEpisimContainer container, MutableEpisimPerson person, String activity) {
+	protected EpisimConfigGroup.InfectionParams getInfectionParams(EpisimContainer container, MutableEpisimPerson person, String activity) {
 		if (container.isVehicle()) {
 			return trParams.params;
 		} else  {
@@ -160,16 +166,16 @@ public abstract class AbstractContactModel implements ContactModel {
 		otherPerson.addTraceableContactPerson(personLeavingContainer, now);
 	}
 
-	private boolean activityRelevantForInfectionDynamics(MutableEpisimPerson person, EpisimContainer container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
-		MutableEpisimPerson.Activity act = person.getTrajectory().get(person.getCurrentPositionInTrajectory());
+	private boolean activityRelevantForInfectionDynamics(MutableEpisimPerson person, EpisimContainer container, EpisimConfigGroup.InfectionParams act,
+														 Map<String, Restriction> restrictions, SplittableRandom rnd) {
 
 		// Check if person is home quarantined
-		if (person.getQuarantineStatus() == QuarantineStatus.atHome && !act.actType.startsWith("home"))
+		if (person.getQuarantineStatus() == QuarantineStatus.atHome && !act.getContainerName().startsWith("home"))
 			return false;
 
 
 		// enforce max group sizes
-		Restriction r = restrictions.get(act.params.getContainerName());
+		Restriction r = restrictions.get(act.getContainerName());
 		if (r.getMaxGroupSize() != null && r.getMaxGroupSize() > -1 && container.getMaxGroupSize() > 0 &&
 				container.getMaxGroupSize() > r.getMaxGroupSize())
 			return false;
@@ -180,9 +186,9 @@ public abstract class AbstractContactModel implements ContactModel {
 		return actIsRelevant(act, restrictions, rnd);
 	}
 
-	private boolean actIsRelevant(MutableEpisimPerson.Activity act, Map<String, Restriction> restrictions, SplittableRandom rnd) {
+	private boolean actIsRelevant(EpisimConfigGroup.InfectionParams act, Map<String, Restriction> restrictions, SplittableRandom rnd) {
 
-		Restriction r = restrictions.get(act.params.getContainerName());
+		Restriction r = restrictions.get(act.getContainerName());
 		// avoid use of rnd if outcome is known beforehand
 		if (r.getRemainingFraction() == 1)
 			return true;
@@ -193,20 +199,14 @@ public abstract class AbstractContactModel implements ContactModel {
 
 	}
 
-	private boolean tripRelevantForInfectionDynamics(MutableEpisimPerson person, Map<String, Restriction> restrictions, SplittableRandom rnd) {
-		MutableEpisimPerson.Activity lastAct = null;
-		if (person.getCurrentPositionInTrajectory() != 0) {
-			lastAct = person.getTrajectory().get(person.getCurrentPositionInTrajectory() - 1);
-		}
+	private boolean tripRelevantForInfectionDynamics(MutableEpisimPerson person, PersonLeavesContainerEvent event, Map<String, Restriction> restrictions, SplittableRandom rnd) {
 
 		if (person.getQuarantineStatus() != QuarantineStatus.no)
 			return false;
 
-		MutableEpisimPerson.Activity nextAct = person.getTrajectory().get(person.getCurrentPositionInTrajectory());
-
 		// last activity is only considered if present
-		return actIsRelevant(trParams, restrictions, rnd) && actIsRelevant(nextAct, restrictions, rnd)
-				&& (lastAct == null || actIsRelevant(lastAct, restrictions, rnd));
+		return actIsRelevant(trParams.params, restrictions, rnd) && actIsRelevant(event.getNextActivity(), restrictions, rnd)
+				&& (event.getPrevActivity() == null || actIsRelevant(event.getPrevActivity(), restrictions, rnd));
 
 	}
 
@@ -216,10 +216,10 @@ public abstract class AbstractContactModel implements ContactModel {
 	 *
 	 * @noinspection BooleanMethodIsAlwaysInverted
 	 */
-	protected final boolean personRelevantForTrackingOrInfectionDynamics(MutableEpisimPerson person, MutableEpisimContainer container,
+	protected final boolean personRelevantForTrackingOrInfectionDynamics(MutableEpisimPerson person, PersonLeavesContainerEvent event,
 																		 Map<String, Restriction> restrictions, SplittableRandom rnd) {
 
-		return personHasRelevantStatus(person) && checkPersonInContainer(person, container, restrictions, rnd);
+		return personHasRelevantStatus(person) && checkPersonInContainer(person, event, restrictions, rnd);
 	}
 
 	protected final boolean personHasRelevantStatus(MutableEpisimPerson person) {
@@ -231,25 +231,28 @@ public abstract class AbstractContactModel implements ContactModel {
 	/**
 	 * Checks whether a person would be present in the container.
 	 */
-	protected final boolean checkPersonInContainer(MutableEpisimPerson person, EpisimContainer container, Map<String, Restriction> restrictions, SplittableRandom rnd) {
+	protected final boolean checkPersonInContainer(MutableEpisimPerson person, PersonLeavesContainerEvent event,
+												   Map<String, Restriction> restrictions, SplittableRandom rnd) {
 		if (person.getQuarantineStatus() == QuarantineStatus.full) {
 			return false;
 		}
 
-		if (!container.isVehicle() && activityRelevantForInfectionDynamics(person, container, restrictions, rnd)) {
+		if (!event.getContainer().isVehicle() && activityRelevantForInfectionDynamics(person, event.getContainer(), event.getActivity(), restrictions, rnd)) {
 			return true;
 		}
-		return container.isVehicle() && tripRelevantForInfectionDynamics(person, restrictions, rnd);
+		return event.getContainer().isVehicle() && tripRelevantForInfectionDynamics(person, event, restrictions, rnd);
 	}
 
 	/**
 	 * Calculate the joint time persons have been in a container.
 	 * This takes possible closing hours into account.
 	 */
-	protected double calculateJointTimeInContainer(double now, MutableEpisimPerson person, double containerEnterTimeOfPersonLeaving, double containerEnterTimeOfOtherPerson) {
-		MutableEpisimPerson.Activity act = person.getTrajectory().get(person.getCurrentPositionInTrajectory());
-		Restriction r = getRestrictions().get(act.params.getContainerName());
+	protected double calculateJointTimeInContainer(double now, PersonContact contact) {
+		Restriction r = getRestrictions().get(contact.getContactPersonActivity().getContainerName());
 
+		return contact.getDuration();
+
+		/* TODO curfew hours
 		// no closing hour set
 		if (r.getClosingHours() == null)
 			return now - Math.max(containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
@@ -263,15 +266,15 @@ public abstract class AbstractContactModel implements ContactModel {
 
 		// joint time can now be negative and will be set to 0
 		return jointTime > 0 ? jointTime : 0;
+		 */
 	}
 
-	/**
-	 * Set the iteration number and restrictions that are in place.
-	 */
+
 	@Override
-	public void setRestrictionsForIteration(int iteration, Map<String, Restriction> restrictions) {
+	public void setIteration(int iteration, Map<Id<Person>, MutableEpisimPerson> persons, Map<String, Restriction> restrictions) {
 		this.iteration = iteration;
 		this.restrictions = restrictions;
+		this.persons = persons;
 		this.infectionModel.setIteration(iteration);
 	}
 
@@ -279,7 +282,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	 * Sets the infection status of a person and reports the event.
 	 */
 	protected void infectPerson(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, StringBuilder infectionType,
-								MutableEpisimContainer container) {
+								EpisimContainer container, int groupSize) {
 
 		if (personWrapper.getDiseaseStatus() != DiseaseStatus.susceptible) {
 			throw new IllegalStateException("Person to be infected is not susceptible. Status is=" + personWrapper.getDiseaseStatus());
@@ -293,9 +296,6 @@ public abstract class AbstractContactModel implements ContactModel {
 		if (infector.getQuarantineStatus() == QuarantineStatus.full) {
 			throw new IllegalStateException("Infector is in ful quarantine.");
 		}
-		if (!personWrapper.getCurrentContainer().equals(infector.getCurrentContainer())) {
-			throw new IllegalStateException("Person and infector are not in same container!");
-		}
 
 		// TODO: during iteration persons can get infected after 24h
 		// this can lead to strange effects / ordering of events, because it is assumed one iteration is one day
@@ -306,7 +306,7 @@ public abstract class AbstractContactModel implements ContactModel {
 
 		String infType = infectionType.toString();
 
-		reporting.reportInfection(personWrapper, infector, now, infType, container);
+		reporting.reportInfection(personWrapper, infector, now, infType, container, groupSize);
 		personWrapper.setDiseaseStatus(now, DiseaseStatus.infectedButNotContagious);
 		personWrapper.setInfectionContainer(container);
 		personWrapper.setInfectionType(infType);

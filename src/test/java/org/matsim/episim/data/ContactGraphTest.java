@@ -72,7 +72,7 @@ public class ContactGraphTest {
 		assertThat(ev.getPersonId()).isEqualTo(persons.get(0));
 		assertThat(ev.getContainer()).isEqualTo(container.get(1));
 		assertThat(ev.getActivity()).isEqualTo(infectionParams.get(0));
-		assertThat(ev.getLeaveTime()).isEqualTo(1000);
+		assertThat(ev.getTime()).isEqualTo(1000);
 		assertThat(ev.getEnterTime()).isEqualTo(2000);
 
 		assertThat(ev)
@@ -82,7 +82,7 @@ public class ContactGraphTest {
 
 		assertThat(ev.getPersonId()).isEqualTo(persons.get(1));
 		assertThat(ev.getContainer()).isEqualTo(container.get(2));
-		assertThat(ev.getLeaveTime()).isEqualTo(5000);
+		assertThat(ev.getTime()).isEqualTo(5000);
 
 		assertThat(ev)
 				.allMatch(p -> p.getContactPerson().equals(persons.get(4)) &&

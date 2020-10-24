@@ -5,13 +5,14 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.internal.HasPersonId;
 import org.matsim.episim.EpisimConfigGroup;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * Low-level event of a person leaving a container (facility or vehicle).
  * Instances of this class must not be stored, only consumed!
  */
-public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<PersonContact> {
+public interface PersonLeavesContainerEvent extends EpisimEvent, Iterable<PersonContact> {
 
 	/**
 	 * Id of the container left.
@@ -24,9 +25,21 @@ public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<Person
 	EpisimConfigGroup.InfectionParams getActivity();
 
 	/**
+	 * Previous activity of this person. Null if there is none.
+	 */
+	@Nullable
+	EpisimConfigGroup.InfectionParams getPrevActivity();
+
+	/**
+	 * Next activity of this person. Null if there is none.
+	 */
+	@Nullable
+	EpisimConfigGroup.InfectionParams getNextActivity();
+
+	/**
 	 * Time in seconds since start of the day, when this person left.
 	 */
-	int getLeaveTime();
+	int getTime();
 
 	/**
 	 * Time in seconds since start of the day when this person entered the facility.
@@ -37,6 +50,11 @@ public interface PersonLeavesContainerEvent extends HasPersonId, Iterable<Person
 	 * Number of contacts possible in this container.
 	 */
 	int getNumberOfContacts();
+
+	/**
+	 * Get a single contact by its index, going from 0 to {@link #getNumberOfContacts()}.
+	 */
+	PersonContact getContact(int index);
 
 	/**
 	 * Creates a new instances of a person leave event.

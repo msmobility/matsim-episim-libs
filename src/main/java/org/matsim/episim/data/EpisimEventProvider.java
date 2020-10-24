@@ -36,6 +36,6 @@ public interface EpisimEventProvider {
 	 *
 	 * @param day the day to simulate
 	 */
-	Iterable<PersonLeavesContainerEvent> forDay(DayOfWeek day);
+	Iterable<EpisimEvent> forDay(DayOfWeek day);
 
 }

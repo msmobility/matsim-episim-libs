@@ -10,7 +10,6 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
 import org.matsim.episim.data.DiseaseStatus;
-import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.data.QuarantineStatus;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.RestrictionTest;
@@ -50,7 +49,7 @@ public class DefaultContactModelTest {
 		infectionModel = new DefaultInfectionModel(new DefaultFaceMaskModel(rnd), config);
 		model = new DefaultContactModel(rnd, config, reporting, infectionModel ) ;
 		restrictions = episimConfig.createInitialRestrictions();
-		model.setRestrictionsForIteration(1, restrictions);
+		model.setIteration(1, EpisimTestUtils.getPersons(), restrictions);
 
 	}
 
@@ -71,7 +70,7 @@ public class DefaultContactModelTest {
 		for (int i = 0; i < 30_000; i++) {
 			MutableEpisimContainer container = f.get();
 			MutableEpisimPerson person = p.apply(container);
-			model.infectionDynamicsContainer(person, container, jointTime.getSeconds());
+			model.infectionDynamicsContainer(EpisimTestUtils.createEvent(0, person, container), jointTime.getSeconds());
 			if (person.getDiseaseStatus() == DiseaseStatus.infectedButNotContagious)
 				infections++;
 		}
@@ -96,7 +95,7 @@ public class DefaultContactModelTest {
 
 			while (!container.getPersons().isEmpty()) {
 				MutableEpisimPerson person = container.getPersons().get(r.nextInt(container.getPersons().size()));
-				model.infectionDynamicsContainer(person, container, jointTime.getSeconds());
+				model.infectionDynamicsContainer(EpisimTestUtils.createEvent(0, person, container), jointTime.getSeconds());
 				EpisimTestUtils.removePerson(container, person);
 			}
 
@@ -346,7 +345,7 @@ public class DefaultContactModelTest {
 		tracingConfig.setPutTraceablePersonsInQuarantineAfterDay( Integer.MAX_VALUE );
 		tracingConfig.setMinContactDuration_sec( 0 );
 		model = new DefaultContactModel(new SplittableRandom(1), config, rNoTracking, infectionModel ) ;
-		model.setRestrictionsForIteration(1, episimConfig.createInitialRestrictions());
+		model.setIteration(1, EpisimTestUtils.getPersons(), episimConfig.createInitialRestrictions());
 		sampleTotalInfectionRate(500, Duration.ofMinutes(15), "leis", container);
 
 
@@ -355,7 +354,7 @@ public class DefaultContactModelTest {
 		tracingConfig.setPutTraceablePersonsInQuarantineAfterDay( 0 );
 		tracingConfig.setMinContactDuration_sec( 0 );
 		model = new DefaultContactModel(new SplittableRandom(1), config, rTracking, infectionModel );
-		model.setRestrictionsForIteration(1, episimConfig.createInitialRestrictions());
+		model.setIteration(1, EpisimTestUtils.getPersons(), episimConfig.createInitialRestrictions());
 
 		sampleTotalInfectionRate(500, Duration.ofMinutes(15), "leis", container);
 

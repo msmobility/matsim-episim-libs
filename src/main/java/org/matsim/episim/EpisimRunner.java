@@ -31,6 +31,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.ControlerUtils;
 import org.matsim.core.gbl.Gbl;
+import org.matsim.episim.data.EpisimEvent;
 import org.matsim.episim.data.EpisimEventProvider;
 import org.matsim.episim.data.PersonLeavesContainerEvent;
 import org.matsim.episim.model.ProgressionModel;
@@ -145,7 +146,7 @@ public final class EpisimRunner {
 
 		DayOfWeek day = EpisimUtils.getDayOfWeek(ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class).getStartDate(), iteration);
 
-		for (PersonLeavesContainerEvent e : eventProvider.forDay(day)) {
+		for (EpisimEvent e : eventProvider.forDay(day)) {
 			handler.processEvent(e);
 		}
 

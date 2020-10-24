@@ -4,6 +4,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 
@@ -44,8 +45,20 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 		return param;
 	}
 
+	@Nullable
 	@Override
-	public int getLeaveTime() {
+	public EpisimConfigGroup.InfectionParams getNextActivity() {
+		return null;
+	}
+
+	@Nullable
+	@Override
+	public EpisimConfigGroup.InfectionParams getPrevActivity() {
+		return null;
+	}
+
+	@Override
+	public int getTime() {
 		return leaveTime;
 	}
 
@@ -57,6 +70,11 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 	@Override
 	public int getNumberOfContacts() {
 		return contacts.size();
+	}
+
+	@Override
+	public PersonContact getContact(int index) {
+		return contacts.get(index);
 	}
 
 	@Override

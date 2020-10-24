@@ -23,39 +23,21 @@ package org.matsim.episim;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.ConfigFactory;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.objects.AbstractObject2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.IdMap;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.events.*;
-import org.matsim.api.core.v01.events.handler.ActivityEndEventHandler;
-import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonEntersVehicleEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonLeavesVehicleEventHandler;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.core.api.internal.HasPersonId;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.gbl.Gbl;
-import org.matsim.core.router.TripStructureUtils;
-import org.matsim.episim.data.EpisimContainer;
-import org.matsim.episim.data.EpisimEventProvider;
-import org.matsim.episim.data.PersonLeavesContainerEvent;
+import org.matsim.episim.data.*;
 import org.matsim.episim.model.ContactModel;
 import org.matsim.episim.model.InitialInfectionHandler;
 import org.matsim.episim.model.ProgressionModel;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.ShutdownPolicy;
-import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributes;
-import org.matsim.vehicles.Vehicle;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -253,7 +235,7 @@ public final class InfectionEventHandler implements Externalizable {
 
 		ImmutableMap<String, Restriction> im = ImmutableMap.copyOf(this.restrictions);
 		policy.updateRestrictions(report, im);
-		contactModel.setRestrictionsForIteration(iteration, im);
+		contactModel.setIteration(iteration, personMap, im);
 		reporting.reportRestrictions(restrictions, iteration, report.date);
 
 	}
@@ -324,9 +306,15 @@ public final class InfectionEventHandler implements Externalizable {
 	/**
 	 * Processes an episim specific event.
 	 */
-	void processEvent(PersonLeavesContainerEvent e) {
+	void processEvent(EpisimEvent e) {
 
-		// TODO
+		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), e.getTime(), iteration);
+
+		if (e instanceof PersonEntersContainerEvent) {
+			contactModel.notifyEnterContainer((PersonEntersContainerEvent) e, now);
+		} else if (e instanceof MutablePersonLeavesContainerEvent) {
+			contactModel.infectionDynamicsContainer((PersonLeavesContainerEvent) e, now);
+		}
 
 	}
 }

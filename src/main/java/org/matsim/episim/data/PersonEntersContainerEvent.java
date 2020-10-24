@@ -6,10 +6,10 @@ import org.matsim.core.api.internal.HasPersonId;
 import org.matsim.episim.EpisimConfigGroup;
 
 
-public interface PersonEntersContainerEvent extends HasPersonId {
+public interface PersonEntersContainerEvent extends EpisimEvent {
 
 	/**
-	 * Id of the container left.
+	 * Container the person is entering.
 	 */
 	EpisimContainer getContainer();
 
@@ -17,11 +17,6 @@ public interface PersonEntersContainerEvent extends HasPersonId {
 	 * Activity this person performed.
 	 */
 	EpisimConfigGroup.InfectionParams getActivity();
-
-	/**
-	 * Time in seconds since start of the day when this person entered the facility.
-	 */
-	int getEnterTime();
 
 	/**
 	 * Creates a new instances of a person leave event.

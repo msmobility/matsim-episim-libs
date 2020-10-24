@@ -126,7 +126,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				if (event instanceof HasPersonId) {
 					if (!shouldHandlePersonEvent((HasPersonId) event)) continue;
 
-					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), MutableEpisimPerson::new);
+					// TODO: reporting should not be needed
+					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), p -> new MutableEpisimPerson(p, null, reporting));
 
 					// If a person was added late, previous days are initialized at home
 					for (int i = 1; i < day.getValue(); i++) {
@@ -616,7 +617,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	}
 
 	@Override
-	public Iterable<PersonLeavesContainerEvent> forDay(DayOfWeek day) {
+	public Iterable<EpisimEvent> forDay(DayOfWeek day) {
 
 		// TODO: needs to be in iterator and generate events
 		// TODO ###################
@@ -632,10 +633,10 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	/**
 	 * Generates events based on matsim input events.
 	 */
-	private class EventsIterator implements Iterator<PersonLeavesContainerEvent> {
+	private class EventsIterator implements Iterator<EpisimEvent> {
 
 		private final Iterator<Event> it;
-		private final PersonLeaves event = new PersonLeaves();
+		private final MutablePersonLeavesContainerEvent event = new MutablePersonLeavesContainerEvent();
 
 
 		public EventsIterator(Iterator<Event> events) {
@@ -645,14 +646,15 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		@Override
 		public boolean hasNext() {
 
+			MutableEpisimContainer container = (MutableEpisimContainer) event.getContainer();
+
 			// remove person from previous event
-			if (event.container != null) {
-				event.container.removePerson(event.person);
+			if (container != null) {
+				container.removePerson(event.getPerson());
 
-				if (event.container.isFacility())
-					handlePersonTrajectory(event.person.getPersonId(),
-							event.person.getTrajectory().get(event.person.getCurrentPositionInTrajectory()));
-
+				if (container.isFacility())
+					handlePersonTrajectory(event.getPerson().getPersonId(),
+							event.getPerson().getTrajectory().get(event.getPerson().getCurrentPositionInTrajectory()));
 
 				event.reset();
 			}
@@ -700,63 +702,6 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		@Override
 		public PersonLeavesContainerEvent next() {
 			return event;
-		}
-	}
-
-	private static class PersonLeaves implements PersonLeavesContainerEvent {
-
-		private int now;
-		private MutableEpisimPerson person;
-		private MutableEpisimContainer container;
-
-		private PersonLeaves setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
-			this.now = now;
-			this.person = person;
-			this.container = container;
-			return this;
-		}
-
-		private void reset() {
-			this.now = -1;
-			this.person = null;
-			this.container = null;
-		}
-
-		@Override
-		public EpisimContainer getContainer() {
-			return container;
-		}
-
-		@Override
-		public EpisimConfigGroup.InfectionParams getActivity() {
-			return person.getTrajectory().get(person.getCurrentPositionInTrajectory()).params;
-		}
-
-		@Override
-		public int getLeaveTime() {
-			return now;
-		}
-
-		@Override
-		public int getEnterTime() {
-			return (int) container.getContainerEnteringTime(person.getPersonId());
-		}
-
-		@Override
-		public int getNumberOfContacts() {
-			return container.getPersons().size() - 1;
-		}
-
-		@Override
-		public Iterator<PersonContact> iterator() {
-			// TODO
-			// TODO ##############################
-			return null;
-		}
-
-		@Override
-		public Id<Person> getPersonId() {
-			return person.getPersonId();
 		}
 	}
 

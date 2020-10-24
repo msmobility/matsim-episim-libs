@@ -1,16 +1,17 @@
 package org.matsim.episim;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.episim.data.DiseaseStatus;
-import org.matsim.episim.data.EpisimContainer;
-import org.matsim.episim.data.QuarantineStatus;
+import org.matsim.episim.data.*;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -31,6 +32,7 @@ public class EpisimTestUtils {
 
 	private static final AtomicLong ID = new AtomicLong(0);
 	private static final EpisimReporting reporting = Mockito.mock(EpisimReporting.class, Mockito.withSettings().stubOnly());
+	private static final Map<Id<Person>, MutableEpisimPerson> persons = new ConcurrentHashMap<>();
 
 	public static final EpisimConfigGroup TEST_CONFIG = ConfigUtils.addOrGetModule( createTestConfig(), EpisimConfigGroup.class );
 
@@ -96,6 +98,7 @@ public class EpisimTestUtils {
 	 */
 	public static MutableEpisimPerson createPerson(String currentAct, @Nullable MutableEpisimContainer container) {
 		MutableEpisimPerson p = new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
+		persons.put(p.getId(), p);
 
 		p.getTrajectory().add(new MutableEpisimPerson.Activity(currentAct, TEST_CONFIG.selectInfectionParams(currentAct)));
 
@@ -110,7 +113,9 @@ public class EpisimTestUtils {
 	 * Create a person with specific reporting.
 	 */
 	public static MutableEpisimPerson createPerson(EpisimReporting reporting) {
-		return new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
+		MutableEpisimPerson p = new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
+		persons.put(p.getId(), p);
+		return p;
 	}
 
 	/**
@@ -120,6 +125,7 @@ public class EpisimTestUtils {
 																  String act, Consumer<MutableEpisimPerson> init) {
 		for (int i = 0; i < n; i++) {
 			MutableEpisimPerson p = createPerson(act, container);
+			persons.put(p.getId(), p);
 			init.accept(p);
 		}
 
@@ -141,5 +147,20 @@ public class EpisimTestUtils {
 		return new EpisimReporting.InfectionReport("test", 0, date, day);
 	}
 
+	/**
+	 * Return map of all persons.
+	 */
+	public static Map<Id<Person>, MutableEpisimPerson> getPersons() {
+		return persons;
+	}
+
+	/**
+	 * Create a mutable leave event with given context.
+	 */
+	public static PersonLeavesContainerEvent createEvent(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
+		MutablePersonLeavesContainerEvent e = new MutablePersonLeavesContainerEvent();
+		e.setContext(now, person, container);
+		return e;
+	}
 
 }
