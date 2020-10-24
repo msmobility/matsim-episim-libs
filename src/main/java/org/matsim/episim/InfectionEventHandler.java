@@ -140,7 +140,7 @@ public final class InfectionEventHandler implements Externalizable {
 	/**
 	 * All container.
 	 */
-	private Map<Id<EpisimContainer>, EpisimContainer> containerMap = new IdMap<>(EpisimContainer.class);
+	private Set<EpisimContainer> container;
 
 	private boolean init = false;
 	private int iteration = 0;
@@ -194,8 +194,8 @@ public final class InfectionEventHandler implements Externalizable {
 			personMap.put(id, createPerson(id));
 		}
 
-		containerMap = (Map<Id<EpisimContainer>, EpisimContainer>) provider.getContainer();
 
+		container = provider.getContainer();
 		policy.init(episimConfig.getStartDate(), ImmutableMap.copyOf(this.restrictions));
 		init = true;
 	}
@@ -277,10 +277,10 @@ public final class InfectionEventHandler implements Externalizable {
 			e.getValue().write(out);
 		}
 
-		out.writeInt(containerMap.size());
-		for (Map.Entry<Id<EpisimContainer>, EpisimContainer> e : containerMap.entrySet()) {
-			writeChars(out, e.getKey().toString());
-			e.getValue().write(out);
+		out.writeInt(container.size());
+		for (EpisimContainer e : container) {
+			writeChars(out, e.getContainerId().toString());
+			e.write(out);
 		}
 	}
 
@@ -304,16 +304,19 @@ public final class InfectionEventHandler implements Externalizable {
 			restrictions.put(act, Restriction.fromConfig(ConfigFactory.parseString(readChars(in))));
 		}
 
+		// TODO
+		// TODO ################
+
 		int persons = in.readInt();
 		for (int i = 0; i < persons; i++) {
 			Id<Person> id = Id.create(readChars(in), Person.class);
-			personMap.get(id).read(in, personMap, containerMap);
+		//	personMap.get(id).read(in, personMap, containerMap);
 		}
 
 		int vehicles = in.readInt();
 		for (int i = 0; i < vehicles; i++) {
 			Id<EpisimContainer> id = Id.create(readChars(in), EpisimContainer.class);
-			containerMap.get(id).read(in, personMap);
+		//	containerMap.get(id).read(in, personMap);
 		}
 	}
 
