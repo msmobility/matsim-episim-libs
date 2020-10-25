@@ -18,6 +18,16 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 	private MutableEpisimPerson person;
 	private MutableEpisimContainer container;
 
+	/**
+	 * Instance to retrieve person contacts.
+	 */
+	private final MutablePersonContact contact = new MutablePersonContact();
+
+	/**
+	 * Reusable iterator.
+	 */
+	private final ContactIterator it = new ContactIterator();
+
 	MutablePersonLeavesContainerEvent setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
 		this.now = now;
 		this.person = person;
@@ -78,19 +88,82 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 
 	@Override
 	public Iterator<PersonContact> iterator() {
-		// TODO
-		// TODO ##############################
-		return null;
+		it.reset();
+		return it;
 	}
 
 	@Override
 	public PersonContact getContact(int index) {
-		// TODO
-		return null;
+		if (container.getPersons().get(index) == person)
+			index += 1;
+
+		if (index >= container.getPersons().size())
+			throw new IllegalArgumentException("Index " + index + " out of bounds for contacts of size " + container.getPersons().size());
+
+		contact.setPerson(container.getPersons().get(index));
+
+		return contact;
 	}
 
 	@Override
 	public Id<Person> getPersonId() {
 		return person.getPersonId();
 	}
+
+
+	private final class MutablePersonContact implements PersonContact {
+
+		/**
+		 * Contact person.
+		 */
+		private MutableEpisimPerson contactPerson;
+
+		private void setPerson(MutableEpisimPerson person) {
+			contactPerson = person;
+		}
+
+		@Override
+		public Id<Person> getContactPerson() {
+			return person.getPersonId();
+		}
+
+		@Override
+		public EpisimConfigGroup.InfectionParams getContactPersonActivity() {
+			return contactPerson.getTrajectory().get(contactPerson.getCurrentPositionInTrajectory()).params;
+		}
+
+		@Override
+		public int getOffset() {
+			return (int) (container.getContainerEnteringTime(contactPerson.getPersonId()) - getEnterTime());
+		}
+
+		@Override
+		public int getDuration() {
+			return (int) (now - Math.max(container.getContainerEnteringTime(person.getPersonId()), container.getContainerEnteringTime(contactPerson.getPersonId())));
+		}
+	}
+
+	/**
+	 * Iterates over the contacts of a person in a container.
+	 */
+	private final class ContactIterator implements Iterator<PersonContact> {
+
+		private int index = -1;
+
+		private void reset() {
+			index = -1;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return index < getNumberOfContacts();
+		}
+
+		@Override
+		public PersonContact next() {
+			index++;
+			return getContact(index);
+		}
+	}
+
 }
