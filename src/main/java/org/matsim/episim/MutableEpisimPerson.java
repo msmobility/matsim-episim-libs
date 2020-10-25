@@ -250,11 +250,6 @@ public final class MutableEpisimPerson implements EpisimPerson, Attributable {
 		return personId;
 	}
 
-	@Override
-	public Id<Person> getId() {
-		return personId;
-	}
-
 	public DiseaseStatus getDiseaseStatus() {
 		return status;
 	}

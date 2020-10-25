@@ -3,18 +3,14 @@ package org.matsim.episim.data;
 import com.google.common.annotations.Beta;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.api.internal.HasPersonId;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.utils.objectattributes.attributable.Attributable;
 
 /**
  * Interface for accessing information about a person in episim simulation.
  */
-public interface EpisimPerson extends Attributable {
-
-	/**
-	 * Unique id of the person.
-	 */
-	Id<Person> getId();
+public interface EpisimPerson extends HasPersonId, Attributable {
 
 	/**
 	 * Current {@link DiseaseStatus}.

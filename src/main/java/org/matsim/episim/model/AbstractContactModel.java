@@ -205,7 +205,7 @@ public abstract class AbstractContactModel implements ContactModel {
 			return false;
 
 		// last activity is only considered if present
-		return actIsRelevant(trParams.params, restrictions, rnd) && actIsRelevant(event.getNextActivity(), restrictions, rnd)
+		return actIsRelevant(trParams.params, restrictions, rnd) && (event.getNextActivity() == null || actIsRelevant(event.getNextActivity(), restrictions, rnd))
 				&& (event.getPrevActivity() == null || actIsRelevant(event.getPrevActivity(), restrictions, rnd));
 
 	}
@@ -250,8 +250,7 @@ public abstract class AbstractContactModel implements ContactModel {
 	protected double calculateJointTimeInContainer(double now, PersonContact contact) {
 		Restriction r = getRestrictions().get(contact.getContactPersonActivity().getContainerName());
 
-		return contact.getDuration();
-
+		double jointTime = contact.getDuration();
 		/* TODO curfew hours
 		// no closing hour set
 		if (r.getClosingHours() == null)
@@ -267,6 +266,12 @@ public abstract class AbstractContactModel implements ContactModel {
 		// joint time can now be negative and will be set to 0
 		return jointTime > 0 ? jointTime : 0;
 		 */
+
+		if (jointTime < 0 || jointTime > 86400 * 7) {
+			throw new IllegalStateException("joint time in container is not plausible for contactPerson=" + contact.getContactPerson() + ". Joint time is=" + contact.getDuration());
+		}
+
+		return jointTime;
 	}
 
 

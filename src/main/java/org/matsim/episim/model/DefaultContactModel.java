@@ -166,11 +166,6 @@ public final class DefaultContactModel extends AbstractContactModel {
 					contactPerson.daysSince(DiseaseStatus.contagious, iteration) > 4))
 				continue;
 
-			if (jointTimeInContainer < 0 || jointTimeInContainer > 86400 * 7) {
-				log.warn(now);
-				throw new IllegalStateException("joint time in container is not plausible for personLeavingContainer=" + personLeavingContainer.getPersonId() + " and contactPerson=" + contactPerson.getPersonId() + ". Joint time is=" + jointTimeInContainer);
-			}
-
 			// Parameter will only be retrieved one time
 			if (leavingParams == null)
 				leavingParams = getInfectionParams(container, personLeavingContainer, leavingPersonsActivity);

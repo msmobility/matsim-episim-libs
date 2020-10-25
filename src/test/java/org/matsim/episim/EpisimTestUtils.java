@@ -10,6 +10,7 @@ import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,9 +33,9 @@ public class EpisimTestUtils {
 
 	private static final AtomicLong ID = new AtomicLong(0);
 	private static final EpisimReporting reporting = Mockito.mock(EpisimReporting.class, Mockito.withSettings().stubOnly());
-	private static final Map<Id<Person>, MutableEpisimPerson> persons = new ConcurrentHashMap<>();
+	private static Map<Id<Person>, MutableEpisimPerson> persons = new IdentityHashMap<>();
 
-	public static final EpisimConfigGroup TEST_CONFIG = ConfigUtils.addOrGetModule( createTestConfig(), EpisimConfigGroup.class );
+	public static final EpisimConfigGroup TEST_CONFIG = ConfigUtils.addOrGetModule(createTestConfig(), EpisimConfigGroup.class);
 
 	/**
 	 * Reset the person id counter.
@@ -45,6 +46,7 @@ public class EpisimTestUtils {
 
 	/**
 	 * Creates test config with some default interactions.
+	 *
 	 * @return
 	 */
 	public static Config createTestConfig() {
@@ -98,7 +100,7 @@ public class EpisimTestUtils {
 	 */
 	public static MutableEpisimPerson createPerson(String currentAct, @Nullable MutableEpisimContainer container) {
 		MutableEpisimPerson p = new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
-		persons.put(p.getId(), p);
+		persons.put(p.getPersonId(), p);
 
 		p.getTrajectory().add(new MutableEpisimPerson.Activity(currentAct, TEST_CONFIG.selectInfectionParams(currentAct)));
 
@@ -114,7 +116,7 @@ public class EpisimTestUtils {
 	 */
 	public static MutableEpisimPerson createPerson(EpisimReporting reporting) {
 		MutableEpisimPerson p = new MutableEpisimPerson(Id.createPersonId(ID.getAndIncrement()), new Attributes(), reporting);
-		persons.put(p.getId(), p);
+		persons.put(p.getPersonId(), p);
 		return p;
 	}
 
@@ -122,10 +124,10 @@ public class EpisimTestUtils {
 	 * Add persons to a facility.
 	 */
 	public static MutableEpisimContainer addPersons(MutableEpisimContainer container, int n,
-																  String act, Consumer<MutableEpisimPerson> init) {
+													String act, Consumer<MutableEpisimPerson> init) {
 		for (int i = 0; i < n; i++) {
 			MutableEpisimPerson p = createPerson(act, container);
-			persons.put(p.getId(), p);
+			persons.put(p.getPersonId(), p);
 			init.accept(p);
 		}
 
@@ -150,16 +152,17 @@ public class EpisimTestUtils {
 	/**
 	 * Return map of all persons.
 	 */
-	public static Map<Id<Person>, MutableEpisimPerson> getPersons() {
+	public static Map<Id<Person>, MutableEpisimPerson> createPersons() {
+		persons = new ConcurrentHashMap<>();
 		return persons;
 	}
 
 	/**
 	 * Create a mutable leave event with given context.
 	 */
-	public static PersonLeavesContainerEvent createEvent(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
+	public static PersonLeavesContainerEvent createEvent(int now, MutableEpisimPerson person, MutableEpisimContainer container, EpisimConfigGroup.InfectionParams actType) {
 		MutablePersonLeavesContainerEvent e = new MutablePersonLeavesContainerEvent();
-		e.setContext(now, person, container);
+		e.setContext(now, person, container, actType);
 		return e;
 	}
 

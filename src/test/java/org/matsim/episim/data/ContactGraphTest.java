@@ -34,7 +34,7 @@ public class ContactGraphTest {
 	static {
 		for (int i = 0; i < 5; i++) {
 			EpisimPerson p = EpisimTestUtils.createPerson(null);
-			persons.put(p.getId().index(), p.getId());
+			persons.put(p.getPersonId().index(), p.getPersonId());
 			EpisimContainer c = EpisimTestUtils.createFacility();
 			container.put(c.getContainerId().index(), c);
 		}

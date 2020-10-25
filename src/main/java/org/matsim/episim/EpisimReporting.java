@@ -37,6 +37,7 @@ import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.data.EpisimContainer;
+import org.matsim.episim.data.EpisimPerson;
 import org.matsim.episim.events.EpisimContactEvent;
 import org.matsim.episim.events.EpisimInfectionEvent;
 import org.matsim.episim.events.EpisimPersonStatusEvent;
@@ -361,7 +362,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 * @param infector      infector
 	 * @param infectionType activities of both persons
 	 */
-	public void reportInfection(MutableEpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType,
+	public void reportInfection(EpisimPerson personWrapper, MutableEpisimPerson infector, double now, String infectionType,
 								EpisimContainer container, int groupSize) {
 
 		int cnt = specificInfectionsCnt.getOpaque();
@@ -373,7 +374,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		}
 
 		manager.processEvent(new EpisimInfectionEvent(now, personWrapper.getPersonId(), infector.getPersonId(),
-				personWrapper.getCurrentContainer().getContainerId(), infectionType));
+				container.getContainerId(), infectionType));
 
 
 		String[] array = new String[InfectionEventsWriterFields.values().length];
@@ -394,7 +395,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	 *
 	 * @see EpisimContactEvent
 	 */
-	public void reportContact(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson, EpisimContainer container,
+	public void reportContact(double now, EpisimPerson person, MutableEpisimPerson contactPerson, EpisimContainer container,
 							  StringBuilder actType, double duration, int groupSize) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
@@ -407,7 +408,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	/**
 	 * Report the successful tracing between two persons.
 	 */
-	void reportTracing(double now, MutableEpisimPerson person, MutableEpisimPerson contactPerson) {
+	void reportTracing(double now, EpisimPerson person, EpisimPerson contactPerson) {
 
 		if (writeEvents == EpisimConfigGroup.WriteEvents.tracing || writeEvents == EpisimConfigGroup.WriteEvents.all) {
 			manager.processEvent(new EpisimTracingEvent(now, person.getPersonId(), contactPerson.getPersonId()));

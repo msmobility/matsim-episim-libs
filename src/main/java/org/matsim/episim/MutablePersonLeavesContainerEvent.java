@@ -17,6 +17,7 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 	private int now;
 	private MutableEpisimPerson person;
 	private MutableEpisimContainer container;
+	private EpisimConfigGroup.InfectionParams actType;
 
 	/**
 	 * Instance to retrieve person contacts.
@@ -28,10 +29,12 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 	 */
 	private final ContactIterator it = new ContactIterator();
 
-	MutablePersonLeavesContainerEvent setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container) {
+	MutablePersonLeavesContainerEvent setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container,
+												 EpisimConfigGroup.InfectionParams actType) {
 		this.now = now;
 		this.person = person;
 		this.container = container;
+		this.actType = actType;
 		return this;
 	}
 
@@ -39,6 +42,7 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 		this.now = -1;
 		this.person = null;
 		this.container = null;
+		this.actType = null;
 	}
 
 	public MutableEpisimPerson getPerson() {
@@ -52,13 +56,13 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 
 	@Override
 	public EpisimConfigGroup.InfectionParams getActivity() {
-		return person.getTrajectory().get(person.getCurrentPositionInTrajectory()).params;
+		return actType != null ? actType : person.getTrajectory().get(person.getCurrentPositionInTrajectory()).params;
 	}
 
 	@Nullable
 	@Override
 	public EpisimConfigGroup.InfectionParams getPrevActivity() {
-		if (person.getCurrentPositionInTrajectory() != 0) {
+		if (person.getCurrentPositionInTrajectory() > 0) {
 			return person.getTrajectory().get(person.getCurrentPositionInTrajectory() - 1).params;
 		}
 
@@ -68,7 +72,8 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 	@Nullable
 	@Override
 	public EpisimConfigGroup.InfectionParams getNextActivity() {
-		return person.getTrajectory().get(person.getCurrentPositionInTrajectory() + 1).params;
+		return person.getTrajectory().size() > person.getCurrentPositionInTrajectory() + 1 ?
+		 person.getTrajectory().get(person.getCurrentPositionInTrajectory() + 1).params : null;
 	}
 
 	@Override
@@ -124,7 +129,7 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 
 		@Override
 		public Id<Person> getContactPerson() {
-			return person.getPersonId();
+			return contactPerson.getPersonId();
 		}
 
 		@Override
@@ -139,7 +144,15 @@ class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 
 		@Override
 		public int getDuration() {
-			return (int) (now - Math.max(container.getContainerEnteringTime(person.getPersonId()), container.getContainerEnteringTime(contactPerson.getPersonId())));
+			double containerEnteringTime = container.getContainerEnteringTime(person.getPersonId());
+			double otherEnteringTime = container.getContainerEnteringTime(contactPerson.getPersonId());
+
+			// TODO: might be not correct yet
+			// handle end of day
+			if (containerEnteringTime > now || otherEnteringTime > now)
+				return (int) (86400 - Math.max(containerEnteringTime, otherEnteringTime));
+
+			return (int) (now - Math.max(containerEnteringTime, otherEnteringTime));
 		}
 	}
 

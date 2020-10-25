@@ -557,8 +557,6 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	private void checkAndHandleEndOfNonCircularTrajectory(MutableEpisimPerson person, DayOfWeek day) {
 		Id<EpisimContainer> firstFacilityId = person.getFirstFacilityId(day);
 
-		// TODO: map of container ids
-		// TODO #######################
 		int iteration = 0;
 
 		// now is the start of current day, when this is called iteration still has the value of the last day
@@ -618,16 +616,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 	@Override
 	public Iterable<EpisimEvent> forDay(DayOfWeek day) {
-
-		// TODO: needs to be in iterator and generate events
-		// TODO ###################
-		for (MutableEpisimPerson person : personMap.values()) {
-			checkAndHandleEndOfNonCircularTrajectory(person, day);
-			person.resetCurrentPositionInTrajectory(day);
-		}
-
 		List<Event> events = this.events.get(day);
-		return () -> new EventsIterator(events.iterator());
+		return () -> new EventsIterator(day, personMap.values().iterator(), events.iterator());
 	}
 
 	/**
@@ -635,16 +625,28 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	 */
 	private class EventsIterator implements Iterator<EpisimEvent> {
 
+		private final DayOfWeek day;
+		/**
+		 * Iterator for handling person trajectories.
+		 */
+		private final Iterator<MutableEpisimPerson> init;
 		private final Iterator<Event> it;
 		private final MutablePersonLeavesContainerEvent event = new MutablePersonLeavesContainerEvent();
 
+		private EpisimEvent next;
+		private MutableEpisimContainer firstFacility;
 
-		public EventsIterator(Iterator<Event> events) {
+		public EventsIterator(DayOfWeek day, Iterator<MutableEpisimPerson> init, Iterator<Event> events) {
+			this.day = day;
+			this.init = init;
 			this.it = events;
 		}
 
 		@Override
 		public boolean hasNext() {
+
+			if (next != null)
+				return true;
 
 			MutableEpisimContainer container = (MutableEpisimContainer) event.getContainer();
 
@@ -652,38 +654,93 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 			if (container != null) {
 				container.removePerson(event.getPerson());
 
-				if (container.isFacility())
+				// handle person trajectories
+				if (firstFacility != null) {
+					firstFacility.addPerson(event.getPerson(), 0);
+					event.getPerson().resetCurrentPositionInTrajectory(day);
+					firstFacility = null;
+				} else if (container.isFacility()) {
+
 					handlePersonTrajectory(event.getPerson().getPersonId(),
 							event.getPerson().getTrajectory().get(event.getPerson().getCurrentPositionInTrajectory()));
+				}
 
 				event.reset();
 			}
 
+			if (init.hasNext() && nextFromCircularTrajectory())
+				return true;
+
+			return nextFromEvent();
+		}
+
+		/**
+		 * Generate a event from closing the circular trajectories.
+		 */
+		private boolean nextFromCircularTrajectory() {
+			while (init.hasNext()) {
+				MutableEpisimPerson person = init.next();
+
+				Id<EpisimContainer> firstFacilityId = person.getFirstFacilityId(day);
+
+				if (person.isInContainer()) {
+
+					MutableEpisimContainer container = person.getCurrentContainer();
+					Id<EpisimContainer> lastFacilityId = container.getContainerId();
+
+					if (container.isVehicle() || !firstFacilityId.equals(lastFacilityId)) {
+
+						// person will be put into container after the event
+						firstFacility = containerMap.get(firstFacilityId);
+
+						// index of last activity at previous day
+						int index = person.getEndOfDay(day.minus(1));
+						EpisimConfigGroup.InfectionParams actType = container.isVehicle() ? paramsMap.get("tr").params : person.getTrajectory().get(index).params;
+						next = event.setContext(0, person, container, actType);
+						return true;
+					}
+
+				} else {
+
+					MutableEpisimContainer firstFacility = containerMap.get(firstFacilityId);
+					firstFacility.addPerson(person, 0);
+					person.resetCurrentPositionInTrajectory(day);
+
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Generate an event from activity events.
+		 */
+		private boolean nextFromEvent() {
 			while (it.hasNext()) {
 
-				Event next = it.next();
+				Event ev = it.next();
 
 				// no action necessary
-				if (next instanceof ActivityStartEvent) {
-					handleEvent((ActivityStartEvent) next);
-				} else if (next instanceof PersonEntersVehicleEvent)
-					handleEvent((PersonEntersVehicleEvent) next);
-				else if (next instanceof ActivityEndEvent) {
+				if (ev instanceof ActivityStartEvent) {
+					handleEvent((ActivityStartEvent) ev);
+				} else if (ev instanceof PersonEntersVehicleEvent)
+					handleEvent((PersonEntersVehicleEvent) ev);
+				else if (ev instanceof ActivityEndEvent) {
 
-					ActivityEndEvent e = (ActivityEndEvent) next;
+					ActivityEndEvent e = (ActivityEndEvent) ev;
 
 					if (!shouldHandleActivityEvent(e, e.getActType()))
 						continue;
 
-					Id<ActivityFacility> episimFacilityId = createEpisimFacilityId((HasFacilityId) next);
+					Id<ActivityFacility> episimFacilityId = createEpisimFacilityId(e);
 					MutableEpisimContainer episimContainer = pseudoFacilityMap.get(episimFacilityId);
 					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
 
-					event.setContext((int) e.getTime(), episimPerson, episimContainer);
+					next = event.setContext((int) e.getTime(), episimPerson, episimContainer, null);
 					return true;
-				} else if (next instanceof PersonLeavesVehicleEvent) {
+				} else if (ev instanceof PersonLeavesVehicleEvent) {
 
-					PersonLeavesVehicleEvent e = (PersonLeavesVehicleEvent) next;
+					PersonLeavesVehicleEvent e = (PersonLeavesVehicleEvent) ev;
 
 					if (!shouldHandlePersonEvent(e))
 						continue;
@@ -691,7 +748,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 					MutableEpisimContainer episimContainer = vehicleMap.get(e.getVehicleId());
 					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
 
-					event.setContext((int) e.getTime(), episimPerson, episimContainer);
+					next = event.setContext((int) e.getTime(), episimPerson, episimContainer, null);
 					return true;
 				}
 			}
@@ -700,8 +757,17 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		}
 
 		@Override
-		public PersonLeavesContainerEvent next() {
-			return event;
+		public EpisimEvent next() {
+			if (next != null) {
+				EpisimEvent ev = next;
+				next = null;
+				return ev;
+			}
+
+			if (!hasNext())
+				throw new IllegalStateException("No events left.");
+
+			return next();
 		}
 	}
 
