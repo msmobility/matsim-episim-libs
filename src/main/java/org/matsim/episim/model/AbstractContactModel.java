@@ -49,11 +49,11 @@ public abstract class AbstractContactModel implements ContactModel {
 	/**
 	 * Infections parameter instances for re-use. These are params that are always needed independent of the scenario.
 	 */
-	protected final MutableEpisimPerson.Activity trParams;
+	protected final EpisimPerson.Activity trParams;
 	/**
 	 * Home quarantine infection param.
 	 */
-	protected final MutableEpisimPerson.Activity qhParams;
+	protected final EpisimPerson.Activity qhParams;
 	/**
 	 * See {@link TracingConfigGroup#getMinDuration()}
 	 */
@@ -80,8 +80,8 @@ public abstract class AbstractContactModel implements ContactModel {
 		this.episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 		this.infectionModel = infectionModel;
 		this.reporting = reporting;
-		this.trParams = new MutableEpisimPerson.Activity("tr", episimConfig.selectInfectionParams("tr"));
-		this.qhParams = new MutableEpisimPerson.Activity(QUARANTINE_HOME, episimConfig.selectInfectionParams(QUARANTINE_HOME));
+		this.trParams = new EpisimPerson.Activity("tr", episimConfig.selectInfectionParams("tr"));
+		this.qhParams = new EpisimPerson.Activity(QUARANTINE_HOME, episimConfig.selectInfectionParams(QUARANTINE_HOME));
 		this.trackingMinDuration = ConfigUtils.addOrGetModule(config, TracingConfigGroup.class).getMinDuration();
 	}
 
@@ -252,9 +252,12 @@ public abstract class AbstractContactModel implements ContactModel {
 
 		double jointTime = contact.getDuration();
 		/* TODO curfew hours
+		double max = Math.max(containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
+
 		// no closing hour set
-		if (r.getClosingHours() == null)
-			return now - Math.max(containerEnterTimeOfPersonLeaving, containerEnterTimeOfOtherPerson);
+		if (r.getClosingHours() == null) {
+			return now - max;
+		}
 
 		// entering times are shifted to the past if the facility was closed
 		// now (leave time) is shifted to be earlier if the facility closed already at earlier point

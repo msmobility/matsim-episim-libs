@@ -213,9 +213,9 @@ public class SyntheticScenario extends AbstractModule {
 		}
 
 		@Override
-		public void handleInfections(Map<Id<Person>, MutableEpisimPerson> persons, int iteration) {
+		public int handleInfections(Map<Id<Person>, MutableEpisimPerson> persons, int iteration) {
 
-			if (iteration != 1) return;
+			if (iteration != 1) return 0;
 
 			for (Map.Entry<Id<ActivityFacility>, Set<Id<Person>>> e : facilities.entrySet()) {
 				Iterator<Id<Person>> it = e.getValue().iterator();
@@ -228,6 +228,7 @@ public class SyntheticScenario extends AbstractModule {
 			}
 
 			log.info("Infected {} persons for each facility.", facilities.size());
+			return facilities.size();
 		}
 	}
 

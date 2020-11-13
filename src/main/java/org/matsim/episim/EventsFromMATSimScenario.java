@@ -243,7 +243,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		// Add missing facilities, with only stationary agents
 		for (MutableEpisimContainer facility : pseudoFacilityMap.values()) {
 			if (!maxGroupSize.containsKey(facility)) {
-				totalUsers.put(facility, facility.getPersons().size());
+				totalUsers.mergeInt(facility, facility.getPersons().size(), Integer::max);
 				maxGroupSize.put(facility, facility.getPersons().size());
 
 				// there may be facilities with only "end" events, thus no group size, but correct activity usage
@@ -280,7 +280,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 			for (Event event : eventsForDay) {
 				if (event instanceof HasFacilityId && event instanceof HasPersonId) {
-					MutableEpisimContainer facility = pseudoFacilityMap.get(((HasFacilityId) event).getFacilityId());
+					Id<ActivityFacility> episimFacilityId = createEpisimFacilityId((HasFacilityId) event);
+					MutableEpisimContainer facility = pseudoFacilityMap.get(episimFacilityId);
 
 					// happens on filtered events that are not relevant
 					if (facility == null)
