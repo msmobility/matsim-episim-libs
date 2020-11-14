@@ -17,7 +17,10 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.core.router.TripStructureUtils;
-import org.matsim.episim.data.*;
+import org.matsim.episim.data.EpisimContainer;
+import org.matsim.episim.data.EpisimEvent;
+import org.matsim.episim.data.EpisimEventProvider;
+import org.matsim.episim.data.EpisimPerson;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.vehicles.Vehicle;
 
@@ -632,7 +635,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		 */
 		private final Iterator<MutableEpisimPerson> init;
 		private final Iterator<Event> it;
-		private final MutablePersonLeavesContainerEvent event = new MutablePersonLeavesContainerEvent();
+		private final MutablePersonLeavesContainerEvent leave = new MutablePersonLeavesContainerEvent();
+		private final MutablePersonEntersContainerEvent enter = new MutablePersonEntersContainerEvent();
 
 		private EpisimEvent next;
 		private MutableEpisimContainer firstFacility;
@@ -649,24 +653,32 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 			if (next != null)
 				return true;
 
-			MutableEpisimContainer container = (MutableEpisimContainer) event.getContainer();
+			MutableEpisimContainer container = (MutableEpisimContainer) leave.getContainer();
 
 			// remove person from previous event
 			if (container != null) {
-				container.removePerson(event.getPerson());
+				container.removePerson(leave.getPerson());
 
 				// handle person trajectories
 				if (firstFacility != null) {
-					firstFacility.addPerson(event.getPerson(), 0);
-					event.getPerson().resetCurrentPositionInTrajectory(day);
+					firstFacility.addPerson(leave.getPerson(), 0);
+					leave.getPerson().resetCurrentPositionInTrajectory(day);
+
+					next = enter.setContext(0, leave.getPerson(), firstFacility,
+							leave.getPerson().getTrajectory().get(leave.getPerson().getCurrentPositionInTrajectory()).params);
+
 					firstFacility = null;
+					leave.reset();
+
+					return true;
+
 				} else if (container.isFacility()) {
 
-					handlePersonTrajectory(event.getPerson().getPersonId(),
-							event.getPerson().getTrajectory().get(event.getPerson().getCurrentPositionInTrajectory()));
+					handlePersonTrajectory(leave.getPerson().getPersonId(),
+							leave.getPerson().getTrajectory().get(leave.getPerson().getCurrentPositionInTrajectory()));
 				}
 
-				event.reset();
+				leave.reset();
 			}
 
 			if (init.hasNext() && nextFromCircularTrajectory())
@@ -697,7 +709,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 						// index of last activity at previous day
 						int index = person.getEndOfDay(day.minus(1));
 						EpisimConfigGroup.InfectionParams actType = container.isVehicle() ? paramsMap.get("tr").params : person.getTrajectory().get(index).params;
-						next = event.setContext(0, person, container, actType);
+						next = leave.setContext(0, person, container, actType);
 						return true;
 					}
 
@@ -707,6 +719,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 					firstFacility.addPerson(person, 0);
 					person.resetCurrentPositionInTrajectory(day);
 
+					next = enter.setContext(0, person, firstFacility, person.getTrajectory().get(person.getCurrentPositionInTrajectory()).params);
+					return true;
 				}
 			}
 
@@ -723,10 +737,29 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 
 				// no action necessary
 				if (ev instanceof ActivityStartEvent) {
-					handleEvent((ActivityStartEvent) ev);
-				} else if (ev instanceof PersonEntersVehicleEvent)
-					handleEvent((PersonEntersVehicleEvent) ev);
-				else if (ev instanceof ActivityEndEvent) {
+					if (handleEvent((ActivityStartEvent) ev)) {
+						next = enter.setContext(
+								enter.getTime(),
+								personMap.get(((ActivityStartEvent) ev).getPersonId()),
+								pseudoFacilityMap.get(createEpisimFacilityId((HasFacilityId) ev)),
+								paramsMap.get(((ActivityStartEvent) ev).getActType()).params
+						);
+						return true;
+					}
+
+				} else if (ev instanceof PersonEntersVehicleEvent) {
+
+					if (handleEvent((PersonEntersVehicleEvent) ev)) {
+						next = enter.setContext(
+								enter.getTime(),
+								personMap.get(((PersonEntersVehicleEvent) ev).getPersonId()),
+								vehicleMap.get(((PersonEntersVehicleEvent) ev).getVehicleId()),
+								paramsMap.get("tr").params
+						);
+						return true;
+					}
+
+				} else if (ev instanceof ActivityEndEvent) {
 
 					ActivityEndEvent e = (ActivityEndEvent) ev;
 
@@ -737,7 +770,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 					MutableEpisimContainer episimContainer = pseudoFacilityMap.get(episimFacilityId);
 					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
 
-					next = event.setContext((int) e.getTime(), episimPerson, episimContainer, null);
+					next = leave.setContext((int) e.getTime(), episimPerson, episimContainer, null);
 					return true;
 				} else if (ev instanceof PersonLeavesVehicleEvent) {
 
@@ -749,7 +782,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 					MutableEpisimContainer episimContainer = vehicleMap.get(e.getVehicleId());
 					MutableEpisimPerson episimPerson = personMap.get(e.getPersonId());
 
-					next = event.setContext((int) e.getTime(), episimPerson, episimContainer, null);
+					next = leave.setContext((int) e.getTime(), episimPerson, episimContainer, null);
 					return true;
 				}
 			}

@@ -6,6 +6,8 @@ import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.episim.EpisimConfigGroup;
@@ -24,7 +26,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Completely static and efficient representation of a contact graph.
@@ -32,7 +33,9 @@ import java.util.List;
  * <p>
  * When the graph is not needed anymore, {@link #close()} needs to be called to free the memory again.s
  */
-public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Closeable {
+public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
+
+	private static final Logger log = LogManager.getLogger(ContactGraph.class);
 
 	/**
 	 * Access to "unsafe" features.
@@ -96,16 +99,17 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Number of bytes per event entry.
 	 */
-	private static final int EVENT_BYTES = 19;
+	private static final int EVENT_BYTES = 22;
 
 	/**
 	 * Array of events when person leaves a "container". Order by leave time.
 	 * <p>
 	 * One entry has the following length and data format:
 	 * <p>
-	 * 32bit 32bit 8bit 16bit 16bit 32bit 16bit = 152bit
+	 * 8bit 32bit 32bit 8bit 16bit 16bit 8bit 8bit 32bit 16bit = 176bit
 	 * <p>
-	 * personId facilityId activity leaveTime enterTime contactIndex nContacts
+	 * eventType personId containerId activity time enterTime nextActivity prevActivity contactIndex nContacts
+	 * <p>
 	 */
 	private final long events;
 
@@ -155,6 +159,9 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 		events = UNSAFE.allocateMemory(numEvents * EVENT_BYTES);
 		contacts = UNSAFE.allocateMemory(numContacts * CONTACT_BYTES);
 
+		log.info("Allocated off-heap memory. Events: {}MB, Contacts: {}MB",
+				(numEvents * EVENT_BYTES) / (1024 * 1024), (numContacts * CONTACT_BYTES) / (1024 * 1024));
+
 		IOUtils.read(c, wrapAddress(events, numEvents * EVENT_BYTES));
 		IOUtils.read(c, wrapAddress(contacts, numContacts * CONTACT_BYTES));
 
@@ -172,11 +179,15 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Creates static graph from list of events.
 	 */
-	ContactGraph(List<PersonLeavesContainerEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
+	ContactGraph(Collection<EpisimEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
 				 Int2ObjectMap<Id<Person>> persons, Int2ObjectMap<EpisimContainer> container) {
 
 		numEvents = eventList.size();
-		numContacts = eventList.stream().mapToInt(PersonLeavesContainerEvent::getNumberOfContacts).sum();
+
+		numContacts = eventList.stream()
+				.filter(e -> e instanceof PersonLeavesContainerEvent)
+				.map(e -> (PersonLeavesContainerEvent) e)
+				.mapToInt(PersonLeavesContainerEvent::getNumberOfContacts).sum();
 
 		events = UNSAFE.allocateMemory(numEvents * EVENT_BYTES);
 		contacts = UNSAFE.allocateMemory(numContacts * CONTACT_BYTES);
@@ -196,34 +207,59 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	/**
 	 * Copy data from objects into the memory.
 	 */
-	private void copyData(List<PersonLeavesContainerEvent> eventList) {
+	private void copyData(Collection<EpisimEvent> eventList) {
 
-		int i = 0;
+		long addr = events;
 		int contactIdx = 0;
 
-		LeavesContainerEvent it = new LeavesContainerEvent(null);
+		LeavesContainerEvent lv = new LeavesContainerEvent(null);
+		EntersContainerEvent en = new EntersContainerEvent();
+
+
 		Contact c = new Contact(contactIdx);
-		for (PersonLeavesContainerEvent event : eventList) {
-			it.setIndex(i);
-			it.setContactIndex(contactIdx);
-			it.setContainerId(event.getContainer().getContainerId().index());
-			it.setPersonId(event.getPersonId().index());
-			it.setActivity(event.getActivity());
-			it.setEnterTime(event.getEnterTime());
-			it.setLeaveTime(event.getTime());
-			it.setNumberOfContacts(event.getNumberOfContacts());
+		for (EpisimEvent event : eventList) {
 
-			for (PersonContact pc : event) {
-				c.setIndex(contactIdx);
-				c.setContactPersonId(pc.getContactPerson().index());
-				c.setOffset(pc.getOffset());
-				c.setDuration(pc.getDuration());
-				c.setContactPersonActivity(pc.getContactPersonActivity());
+			if (event instanceof PersonLeavesContainerEvent) {
 
-				contactIdx++;
+				PersonLeavesContainerEvent e = (PersonLeavesContainerEvent) event;
+
+				UNSAFE.putByte(addr, (byte) 1);
+
+				lv.setAddr(addr);
+				lv.setContactIndex(contactIdx);
+				lv.setContainerId(e.getContainer().getContainerId().index());
+				lv.setPersonId(e.getPersonId().index());
+				lv.setActivity(e.getActivity());
+				lv.setEnterTime(e.getEnterTime());
+				lv.setTime(e.getTime());
+				lv.setNumberOfContacts(e.getNumberOfContacts());
+
+				for (PersonContact pc : e) {
+					c.setIndex(contactIdx);
+					c.setContactPersonId(pc.getContactPerson().index());
+					c.setOffset(pc.getOffset());
+					c.setDuration(pc.getDuration());
+					c.setContactPersonActivity(pc.getContactPersonActivity());
+
+					contactIdx++;
+				}
+
+			} else if (event instanceof PersonEntersContainerEvent) {
+
+				PersonEntersContainerEvent e = (PersonEntersContainerEvent) event;
+
+				UNSAFE.putByte(addr, (byte) 0);
+
+				en.setAddr(addr);
+				en.setActivity(e.getActivity());
+				en.setContainerId(e.getContainer().getContainerId().index());
+				en.setTime(e.getTime());
+				en.setPersonId(e.getPersonId().index());
+
+
 			}
 
-			i++;
+			addr += EVENT_BYTES;
 		}
 	}
 
@@ -249,8 +285,172 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 
 
 	@Override
-	public Iterator<PersonLeavesContainerEvent> iterator() {
+	public Iterator<EpisimEvent> iterator() {
 		return new EventIterator();
+	}
+
+	private abstract class InMemoryEvent {
+
+		/**
+		 * Pointing to entry in {@link #events}.
+		 */
+		protected long addr;
+
+		public void setAddr(long addr) {
+			this.addr = addr;
+		}
+
+		public int getTime() {
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 10)) >> 2;
+		}
+
+		protected void setTime(int time) {
+			UNSAFE.putShort(addr + 10, (short) (time << 2));
+		}
+
+		public Id<Person> getPersonId() {
+			return persons.get(UNSAFE.getInt(addr + 1));
+		}
+
+		protected void setPersonId(int personId) {
+			UNSAFE.putInt(addr + 1, personId);
+		}
+
+		public EpisimContainer getContainer() {
+			return container.get(UNSAFE.getInt(addr + 5));
+		}
+
+		protected void setContainerId(int facilityId) {
+			UNSAFE.putInt(addr + 5, facilityId);
+		}
+
+		public EpisimConfigGroup.InfectionParams getActivity() {
+			return activityTypes[UNSAFE.getByte(addr + 9)];
+		}
+
+		protected void setActivity(EpisimConfigGroup.InfectionParams param) {
+			UNSAFE.putByte(addr + 9, activityMap.getByte(param));
+		}
+
+	}
+
+	/**
+	 * Enter container event.
+	 */
+	private final class EntersContainerEvent extends InMemoryEvent implements PersonEntersContainerEvent {
+	}
+
+	/**
+	 * Person leaving a specific facility at certain time. Points to {@link #events}.
+	 */
+	private final class LeavesContainerEvent extends InMemoryEvent implements PersonLeavesContainerEvent {
+
+		private final ContactIterator it;
+
+		private LeavesContainerEvent(ContactIterator it) {
+			this.it = it;
+		}
+
+		@Nullable
+		@Override
+		public EpisimConfigGroup.InfectionParams getNextActivity() {
+			byte value = UNSAFE.getByte(addr + 14);
+			return value == -1 ? null : activityTypes[value];
+		}
+
+		protected void setNextActivity(EpisimConfigGroup.InfectionParams param) {
+			byte value = param == null ? -1 : activityMap.getByte(param);
+			UNSAFE.putByte(addr + 14, value);
+		}
+
+		@Nullable
+		@Override
+		public EpisimConfigGroup.InfectionParams getPrevActivity() {
+			byte value = UNSAFE.getByte(addr + 15);
+			return value == -1 ? null : activityTypes[value];
+		}
+
+		protected void setPrevActivity(EpisimConfigGroup.InfectionParams param) {
+			byte value = param == null ? -1 : activityMap.getByte(param);
+			UNSAFE.putByte(addr + 15, value);
+		}
+
+		public int getEnterTime() {
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 12)) >> 2;
+		}
+
+		private void setEnterTime(int time) {
+			UNSAFE.putShort(addr + 12, (short) (time << 2));
+		}
+
+		/**
+		 * Index to {@link #contacts}.
+		 */
+		private int getContactIndex() {
+			return UNSAFE.getInt(addr + 16);
+		}
+
+		private void setContactIndex(int index) {
+			UNSAFE.putInt(addr + 16, index);
+		}
+
+		public int getNumberOfContacts() {
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 20));
+		}
+
+		private void setNumberOfContacts(int n) {
+			UNSAFE.putShort(addr + 20, (short) n);
+		}
+
+		@Override
+		public PersonContact getContact(int index) {
+			throw new NotImplementedException("TODO");
+		}
+
+		@Override
+		public Iterator<PersonContact> iterator() {
+			it.reset(getContactIndex(), getNumberOfContacts());
+			return it;
+		}
+	}
+
+	/**
+	 * Iterator for iterating over all contacts in a facility.
+	 */
+	private final class ContactIterator implements Iterator<PersonContact> {
+
+		private final Contact contact;
+		private int end;
+		private int current;
+
+		public ContactIterator(int containerIndex, int n) {
+			current = containerIndex;
+			end = containerIndex + n;
+
+			// start at lower index, because it will be increased first
+			contact = new Contact(current - 1);
+		}
+
+		/**
+		 * Reset position of the contact iterator.
+		 */
+		private void reset(int containerIndex, int n) {
+			current = containerIndex;
+			end = containerIndex + n;
+			contact.setIndex(containerIndex - 1);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return current < end;
+		}
+
+		@Override
+		public Contact next() {
+			contact.next();
+			current++;
+			return contact;
+		}
 	}
 
 	/**
@@ -314,170 +514,25 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 	}
 
 	/**
-	 * Person leaving a specific facility at certain time. Points to {@link #events}.
-	 */
-	public final class LeavesContainerEvent implements PersonLeavesContainerEvent {
-
-		private final ContactIterator it;
-
-		/**
-		 * Pointing to entry in {@link #events}.
-		 */
-		private long addr;
-
-		private LeavesContainerEvent(ContactIterator it) {
-			this.it = it;
-		}
-
-		public Id<Person> getPersonId() {
-			return persons.get(UNSAFE.getInt(addr));
-		}
-
-		private void setPersonId(int personId) {
-			UNSAFE.putInt(addr, personId);
-		}
-
-		public EpisimContainer getContainer() {
-			return container.get(UNSAFE.getInt(addr + 4));
-		}
-
-		private void setContainerId(int facilityId) {
-			UNSAFE.putInt(addr + 4, facilityId);
-		}
-
-		public EpisimConfigGroup.InfectionParams getActivity() {
-			return activityTypes[UNSAFE.getByte(addr + 8)];
-		}
-
-		private void setActivity(EpisimConfigGroup.InfectionParams param) {
-			UNSAFE.putByte(addr + 8, activityMap.getByte(param));
-		}
-
-		@Nullable
-		@Override
-		public EpisimConfigGroup.InfectionParams getNextActivity() {
-			throw new NotImplementedException("TODO");
-		}
-
-		@Nullable
-		@Override
-		public EpisimConfigGroup.InfectionParams getPrevActivity() {
-			throw new NotImplementedException("TODO");
-		}
-
-		public int getTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 9)) >> 2;
-		}
-
-		private void setLeaveTime(int time) {
-			UNSAFE.putShort(addr + 9, (short) (time << 2));
-		}
-
-		public int getEnterTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 11)) >> 2;
-		}
-
-		private void setEnterTime(int time) {
-			UNSAFE.putShort(addr + 11, (short) (time << 2));
-		}
-
-		/**
-		 * Index to {@link #contacts}.
-		 */
-		private int getContactIndex() {
-			return UNSAFE.getInt(addr + 13);
-		}
-
-		private void setContactIndex(int index) {
-			UNSAFE.putInt(addr + 13, index);
-		}
-
-		public int getNumberOfContacts() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 17));
-		}
-
-		@Override
-		public PersonContact getContact(int index) {
-			throw new NotImplementedException("TODO");
-		}
-
-		private void setNumberOfContacts(int n) {
-			UNSAFE.putShort(addr + 17, (short) n);
-		}
-
-		@Override
-		public Iterator<PersonContact> iterator() {
-			it.reset(getContactIndex(), getNumberOfContacts());
-			return it;
-		}
-
-		private void setIndex(int index) {
-			addr = events + (index * EVENT_BYTES);
-		}
-
-		private void next() {
-			addr += EVENT_BYTES;
-		}
-	}
-
-	/**
-	 * Iterator for iterating over all contacts in a facility.
-	 */
-	private final class ContactIterator implements Iterator<PersonContact> {
-
-		private final Contact contact;
-		private int end;
-		private int current;
-
-		public ContactIterator(int containerIndex, int n) {
-			current = containerIndex;
-			end = containerIndex + n;
-
-			// start at lower index, because it will be increased first
-			contact = new Contact(current - 1);
-		}
-
-		/**
-		 * Reset position of the contact iterator.
-		 */
-		private void reset(int containerIndex, int n) {
-			current = containerIndex;
-			end = containerIndex + n;
-			contact.setIndex(containerIndex - 1);
-		}
-
-		@Override
-		public boolean hasNext() {
-			return current < end;
-		}
-
-		@Override
-		public Contact next() {
-			contact.next();
-			current++;
-			return contact;
-		}
-	}
-
-	/**
 	 * Iterates over all {@link LeavesContainerEvent} in the graph.
 	 */
-	private final class EventIterator implements Iterator<PersonLeavesContainerEvent> {
+	private final class EventIterator implements Iterator<EpisimEvent> {
 
 		/**
 		 * Contact iterator re-used when iterating over the individual events
 		 */
 		private final ContactIterator contacts = new ContactIterator(0, 0);
 		/**
-		 * The one event that is re-used and giving access to the data.
+		 * The events that are re-used and giving access to the data.
 		 */
 		private final LeavesContainerEvent event = new LeavesContainerEvent(contacts);
+		private final EntersContainerEvent enterEvent = new EntersContainerEvent();
 
 		private int index;
+		private long addr = events;
 
 		public EventIterator() {
 			index = 0;
-			event.setIndex(-1);
 		}
 
 		@Override
@@ -486,9 +541,21 @@ public class ContactGraph implements Iterable<PersonLeavesContainerEvent>, Close
 		}
 
 		@Override
-		public LeavesContainerEvent next() {
-			event.next();
+		public EpisimEvent next() {
+			event.setAddr(addr);
+
 			index++;
+
+			byte type = UNSAFE.getByte(addr);
+			if (type == 0) {
+				enterEvent.setAddr(addr);
+				return enterEvent;
+			} else if (type == 1) {
+				event.setAddr(addr);
+				addr += EVENT_BYTES;
+				return event;
+			}
+
 			return event;
 		}
 	}

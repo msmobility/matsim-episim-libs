@@ -310,7 +310,7 @@ public final class InfectionEventHandler implements Externalizable {
 
 		if (e instanceof PersonEntersContainerEvent) {
 			contactModel.notifyEnterContainer((PersonEntersContainerEvent) e, now);
-		} else if (e instanceof MutablePersonLeavesContainerEvent) {
+		} else if (e instanceof PersonLeavesContainerEvent) {
 			contactModel.infectionDynamicsContainer((PersonLeavesContainerEvent) e, now);
 		}
 

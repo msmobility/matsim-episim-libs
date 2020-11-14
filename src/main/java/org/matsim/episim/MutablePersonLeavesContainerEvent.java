@@ -12,7 +12,7 @@ import java.util.Iterator;
 /**
  * A mutable event, which depends on the current context.
  */
-class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
+final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEvent {
 
 	private int now;
 	private MutableEpisimPerson person;

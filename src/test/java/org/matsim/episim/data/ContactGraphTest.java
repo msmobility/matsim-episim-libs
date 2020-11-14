@@ -66,8 +66,8 @@ public class ContactGraphTest {
 	}
 
 	private void assertCorrectGraph(ContactGraph g) {
-		Iterator<PersonLeavesContainerEvent> it = g.iterator();
-		PersonLeavesContainerEvent ev = it.next();
+		Iterator<EpisimEvent> it = g.iterator();
+		PersonLeavesContainerEvent ev = (PersonLeavesContainerEvent) it.next();
 
 		assertThat(ev.getPersonId()).isEqualTo(persons.get(0));
 		assertThat(ev.getContainer()).isEqualTo(container.get(1));
@@ -78,7 +78,9 @@ public class ContactGraphTest {
 		assertThat(ev)
 				.hasSize(2);
 
-		ev = it.next();
+		assertThat(it.hasNext()).isTrue();
+
+		ev = (PersonLeavesContainerEvent) it.next();
 
 		assertThat(ev.getPersonId()).isEqualTo(persons.get(1));
 		assertThat(ev.getContainer()).isEqualTo(container.get(2));
@@ -90,10 +92,19 @@ public class ContactGraphTest {
 						p.getOffset() == 500 && p.getDuration() == 700)
 				.hasSize(1);
 
+		assertThat(it.hasNext()).isTrue();
+
+		PersonEntersContainerEvent en = (PersonEntersContainerEvent) it.next();
+
+		assertThat(en.getPersonId()).isEqualTo(persons.get(3));
+		assertThat(en.getContainer()).isEqualTo(container.get(3));
+		assertThat(en.getActivity()).isEqualTo(infectionParams.get(2));
+		assertThat(en.getTime()).isEqualTo(3000);
+
 		assertThat(it.hasNext()).isFalse();
 	}
 
-	private List<PersonLeavesContainerEvent> generateEvents() {
+	private List<EpisimEvent> generateEvents() {
 		return List.of(
 				PersonLeavesContainerEvent.newInstance(
 						persons.get(0),
@@ -130,6 +141,12 @@ public class ContactGraphTest {
 										700
 								)
 						)
+				),
+				PersonEntersContainerEvent.newInstance(
+						persons.get(3),
+						container.get(3),
+						infectionParams.get(2),
+						3000
 				)
 		);
 	}
