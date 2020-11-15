@@ -28,18 +28,9 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.episim.data.EpisimContainer;
-import org.matsim.facilities.ActivityFacility;
-import org.matsim.vehicles.Vehicle;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static org.matsim.episim.EpisimUtils.readChars;
-import static org.matsim.episim.EpisimUtils.writeChars;
 
 /**
  * Wrapper class for a specific location that keeps track of currently contained agents and entering times.
@@ -92,38 +83,6 @@ public class MutableEpisimContainer implements EpisimContainer {
 	MutableEpisimContainer(Id<?> containerId, boolean isVehicle) {
 		this.containerId = Id.create(containerId.toString(), EpisimContainer.class);
 		this.isVehicle = isVehicle;
-	}
-
-	/**
-	 * Reads containers state from stream.
-	 */
-	@Override
-	public void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons) throws IOException {
-
-		this.persons.clear();
-		this.personsAsList.clear();
-		this.containerEnterTimes.clear();
-
-		int n = in.readInt();
-		for (int i = 0; i < n; i++) {
-			Id<Person> id = Id.create(readChars(in), Person.class);
-			this.persons.add(id.index());
-			personsAsList.add(persons.get(id));
-			containerEnterTimes.put(id.index(), in.readDouble());
-		}
-	}
-
-	/**
-	 * Writes state to stream.
-	 */
-	@Override
-	public void write(ObjectOutput out) throws IOException {
-
-		out.writeInt(containerEnterTimes.size());
-		for (MutableEpisimPerson p : personsAsList) {
-			writeChars(out, p.getPersonId().toString());
-			out.writeDouble(containerEnterTimes.get(p.getPersonId().index()));
-		}
 	}
 
 	void addPerson(MutableEpisimPerson person, double now) {

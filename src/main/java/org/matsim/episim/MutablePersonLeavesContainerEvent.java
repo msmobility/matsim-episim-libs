@@ -161,10 +161,10 @@ final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEv
 	 */
 	private final class ContactIterator implements Iterator<PersonContact> {
 
-		private int index = -1;
+		private int index = 0;
 
 		private void reset() {
-			index = -1;
+			index = 0;
 		}
 
 		@Override
@@ -174,8 +174,7 @@ final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEv
 
 		@Override
 		public PersonContact next() {
-			index++;
-			return getContact(index);
+			return getContact(index++);
 		}
 	}
 

@@ -24,6 +24,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -142,7 +143,7 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 	/**
 	 * Create graph by reading it from dist.
 	 */
-	ContactGraph(InputStream in, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
+	public ContactGraph(InputStream in, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
 				 Int2ObjectMap<Id<Person>> persons, Int2ObjectMap<EpisimContainer> container) throws IOException {
 
 		ReadableByteChannel c = Channels.newChannel(in);
@@ -158,9 +159,6 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 		// allocate and transfer memory
 		events = UNSAFE.allocateMemory(numEvents * EVENT_BYTES);
 		contacts = UNSAFE.allocateMemory(numContacts * CONTACT_BYTES);
-
-		log.info("Allocated off-heap memory. Events: {}MB, Contacts: {}MB",
-				(numEvents * EVENT_BYTES) / (1024 * 1024), (numContacts * CONTACT_BYTES) / (1024 * 1024));
 
 		IOUtils.read(c, wrapAddress(events, numEvents * EVENT_BYTES));
 		IOUtils.read(c, wrapAddress(contacts, numContacts * CONTACT_BYTES));
@@ -179,7 +177,7 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 	/**
 	 * Creates static graph from list of events.
 	 */
-	ContactGraph(Collection<EpisimEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
+	public ContactGraph(Collection<EpisimEvent> eventList, Collection<EpisimConfigGroup.InfectionParams> infectionParams,
 				 Int2ObjectMap<Id<Person>> persons, Int2ObjectMap<EpisimContainer> container) {
 
 		numEvents = eventList.size();
@@ -256,7 +254,6 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 				en.setTime(e.getTime());
 				en.setPersonId(e.getPersonId().index());
 
-
 			}
 
 			addr += EVENT_BYTES;
@@ -266,15 +263,24 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 	/**
 	 * Write this graph to disk.
 	 */
-	public void write(FileChannel fc) throws IOException {
+	public void write(WritableByteChannel c) throws IOException {
 		ByteBuffer buf = ByteBuffer.allocate(Integer.BYTES * 2);
 		buf.putInt(numEvents);
 		buf.putInt(numContacts);
 		buf.rewind();
 
-		fc.write(buf);
-		fc.write(wrapAddress(events, numEvents * EVENT_BYTES));
-		fc.write(wrapAddress(contacts, numContacts * CONTACT_BYTES));
+		log.debug("Writing {}MB", getSize() / (1024 * 1024));
+
+		c.write(buf);
+		c.write(wrapAddress(events, numEvents * EVENT_BYTES));
+		c.write(wrapAddress(contacts, numContacts * CONTACT_BYTES));
+	}
+
+	/**
+	 * Return size in bytes
+	 */
+	public long getSize() {
+		return Integer.BYTES * 2 + numEvents * EVENT_BYTES + numContacts * CONTACT_BYTES;
 	}
 
 	@Override
@@ -404,7 +410,8 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 
 		@Override
 		public PersonContact getContact(int index) {
-			throw new NotImplementedException("TODO");
+			it.contact.setIndex(getContactIndex() + index);
+			return it.contact;
 		}
 
 		@Override
@@ -549,6 +556,7 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 			byte type = UNSAFE.getByte(addr);
 			if (type == 0) {
 				enterEvent.setAddr(addr);
+				addr += EVENT_BYTES;
 				return enterEvent;
 			} else if (type == 1) {
 				event.setAddr(addr);

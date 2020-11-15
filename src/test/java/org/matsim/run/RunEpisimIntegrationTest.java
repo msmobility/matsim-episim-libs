@@ -24,11 +24,10 @@ import org.matsim.testcases.MatsimTestUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.Module;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,13 +42,26 @@ public class RunEpisimIntegrationTest {
 	 */
 	@Parameterized.Parameter
 	public int it;
+
+	@Parameterized.Parameter(value = 1)
+	public boolean useGraph;
+
 	private EpisimConfigGroup episimConfig;
 	private TracingConfigGroup tracingConfig;
 	private EpisimRunner runner;
 
 	@Parameterized.Parameters(name = "it{0}")
-	public static Iterable<Integer> parameters() {
-		return Arrays.asList(10, 100);
+	public static Iterable<Object[]> parameters() {
+		ArrayList<Object[]> params = Lists.newArrayList(
+				new Object[]{10, false},
+				new Object[]{100, false}
+		);
+
+		// test graph only if file is present
+		if (Files.exists(Path.of("test/input/openBerlinGraph.tar.lz4")))
+			params.add(new Object[]{100, true});
+
+		return params;
 	}
 
 	/**
@@ -67,7 +79,7 @@ public class RunEpisimIntegrationTest {
 	@Before
 	public void setup() {
 		OutputDirectoryLogging.catchLogEntries();
-		Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(new TestScenario(utils)));
+		Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(new TestScenario(utils, useGraph)));
 
 		episimConfig = injector.getInstance(EpisimConfigGroup.class);
 		tracingConfig = injector.getInstance(TracingConfigGroup.class);
@@ -90,7 +102,7 @@ public class RunEpisimIntegrationTest {
 		// day when tracing starts
 		int tDay = it / 2;
 
-		tracingConfig.setTracingDelay_days(1 );
+		tracingConfig.setTracingDelay_days(1);
 		tracingConfig.setTracingProbability(0.75);
 		tracingConfig.setPutTraceablePersonsInQuarantineAfterDay(tDay);
 
@@ -157,9 +169,16 @@ public class RunEpisimIntegrationTest {
 	static class TestScenario extends AbstractModule {
 
 		private final MatsimTestUtils utils;
+		private final boolean useGraph;
 
 		TestScenario(MatsimTestUtils utils) {
 			this.utils = utils;
+			this.useGraph = false;
+		}
+
+		public TestScenario(MatsimTestUtils utils, boolean useGraph) {
+			this.utils = utils;
+			this.useGraph = useGraph;
 		}
 
 		@Override
@@ -176,6 +195,9 @@ public class RunEpisimIntegrationTest {
 			episimConfig.setInputEventsFile(
 					"https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-1pct/output-berlin-v5.4-1pct/berlin-v5.4-1pct.output_events_for_episim.xml.gz");
 			// still need to push.  is faster
+
+			if (useGraph)
+				episimConfig.setInputGraphFile("test/input/openBerlinGraph.tar.lz4");
 
 			episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.bln);
 			episimConfig.setSampleSize(0.01);

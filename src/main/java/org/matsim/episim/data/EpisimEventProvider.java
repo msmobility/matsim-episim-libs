@@ -4,6 +4,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 
 import java.time.DayOfWeek;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -17,19 +18,14 @@ public interface EpisimEventProvider {
 	void init();
 
 	/**
-	 * Called before each iteration.
-	 */
-	void reset(int iteration);
-
-	/**
 	 * All persons relevant for this provider. The provider is supposed to create these during init phase.
 	 */
-	Set<Id<Person>> getPersonIds();
+	Collection<Id<Person>> getPersonIds();
 
 	/**
 	 * All containers that have been created and that are relevant for the simulation.
 	 */
-	Set<EpisimContainer> getContainer();
+	Collection<EpisimContainer> getContainer();
 
 	/**
 	 * Returns an iterable that provides all events for given day.

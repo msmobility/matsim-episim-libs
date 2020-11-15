@@ -138,7 +138,6 @@ public final class EpisimRunner {
 	boolean doStep(final EpisimEventProvider eventProvider, final InfectionEventHandler handler, final EpisimReporting reporting, int iteration) {
 
 		manager.resetHandlers(iteration);
-		eventProvider.reset(iteration);
 		handler.reset(iteration);
 
 		if (handler.isFinished())

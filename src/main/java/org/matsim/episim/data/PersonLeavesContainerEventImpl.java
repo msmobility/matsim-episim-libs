@@ -15,16 +15,21 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 
 	private final Id<Person> person;
 	private final EpisimContainer container;
-	private final EpisimConfigGroup.InfectionParams param;
+	private final EpisimConfigGroup.InfectionParams activity;
+	private final EpisimConfigGroup.InfectionParams prevActivity;
+	private final EpisimConfigGroup.InfectionParams nextActivity;
 	private final int leaveTime;
 	private final int enterTime;
 	private final List<PersonContact> contacts;
 
-	PersonLeavesContainerEventImpl(Id<Person> person, EpisimContainer container, EpisimConfigGroup.InfectionParams param,
+	PersonLeavesContainerEventImpl(Id<Person> person, EpisimContainer container, EpisimConfigGroup.InfectionParams activity,
+								   EpisimConfigGroup.InfectionParams prevActivity, EpisimConfigGroup.InfectionParams nextActivity,
 								   int leaveTime, int enterTime, List<PersonContact> contacts) {
 		this.person = person;
 		this.container = container;
-		this.param = param;
+		this.activity = activity;
+		this.prevActivity = prevActivity;
+		this.nextActivity = nextActivity;
 		this.leaveTime = leaveTime;
 		this.enterTime = enterTime;
 		this.contacts = contacts;
@@ -42,19 +47,19 @@ class PersonLeavesContainerEventImpl implements PersonLeavesContainerEvent {
 
 	@Override
 	public EpisimConfigGroup.InfectionParams getActivity() {
-		return param;
+		return activity;
 	}
 
 	@Nullable
 	@Override
 	public EpisimConfigGroup.InfectionParams getNextActivity() {
-		return null;
+		return nextActivity;
 	}
 
 	@Nullable
 	@Override
 	public EpisimConfigGroup.InfectionParams getPrevActivity() {
-		return null;
+		return prevActivity;
 	}
 
 	@Override

@@ -44,7 +44,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.time.DayOfWeek;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.SplittableRandom;
 
 import static org.matsim.episim.EpisimUtils.readChars;
 import static org.matsim.episim.EpisimUtils.writeChars;
@@ -122,7 +124,7 @@ public final class InfectionEventHandler implements Externalizable {
 	/**
 	 * All container.
 	 */
-	private Set<EpisimContainer> container;
+	private Collection<EpisimContainer> container;
 
 	private boolean init = false;
 	private int iteration = 0;
@@ -170,7 +172,7 @@ public final class InfectionEventHandler implements Externalizable {
 	 * Initializes all needed data structures before the simulation can start.
 	 * This *always* needs to be called before starting.
 	 */
-	void init(EpisimEventProvider provider) {
+	public void init(EpisimEventProvider provider) {
 
 		for (Id<Person> id : provider.getPersonIds()) {
 			personMap.put(id, createPerson(id));
@@ -194,6 +196,8 @@ public final class InfectionEventHandler implements Externalizable {
 		} else {
 			attrs = new Attributes();
 		}
+
+		// TODO: two different persons implementations
 
 		boolean traceable = localRnd.nextDouble() < tracingConfig.getEquipmentRate();
 
@@ -235,6 +239,21 @@ public final class InfectionEventHandler implements Externalizable {
 		policy.updateRestrictions(report, im);
 		contactModel.setIteration(iteration, personMap, im);
 		reporting.reportRestrictions(restrictions, iteration, report.date);
+
+	}
+
+	/**
+	 * Processes an episim specific event.
+	 */
+	void processEvent(EpisimEvent e) {
+
+		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), e.getTime(), iteration);
+
+		if (e instanceof PersonEntersContainerEvent) {
+			contactModel.notifyEnterContainer((PersonEntersContainerEvent) e, now);
+		} else if (e instanceof PersonLeavesContainerEvent) {
+			contactModel.infectionDynamicsContainer((PersonLeavesContainerEvent) e, now);
+		}
 
 	}
 
@@ -298,22 +317,6 @@ public final class InfectionEventHandler implements Externalizable {
 			Id<EpisimContainer> id = Id.create(readChars(in), EpisimContainer.class);
 		//	containerMap.get(id).read(in, personMap);
 		}
-	}
-
-
-	/**
-	 * Processes an episim specific event.
-	 */
-	void processEvent(EpisimEvent e) {
-
-		double now = EpisimUtils.getCorrectedTime(episimConfig.getStartOffset(), e.getTime(), iteration);
-
-		if (e instanceof PersonEntersContainerEvent) {
-			contactModel.notifyEnterContainer((PersonEntersContainerEvent) e, now);
-		} else if (e instanceof PersonLeavesContainerEvent) {
-			contactModel.infectionDynamicsContainer((PersonLeavesContainerEvent) e, now);
-		}
-
 	}
 }
 

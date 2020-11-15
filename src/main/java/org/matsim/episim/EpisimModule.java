@@ -66,7 +66,13 @@ public class EpisimModule extends AbstractModule {
 	@Singleton
 	public EpisimEventProvider episimEventProvider(Provider<InputEventProvider> input, Scenario scenario, Config config,
 												   EpisimReporting reporting) {
-		// TODO other provider
+
+		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
+
+		if (episimConfig.getInputGraphFile() != null) {
+			return new EventsFromContactGraph(config);
+		}
+
 		return new EventsFromMATSimScenario(input.get(), scenario, config, reporting);
 	}
 

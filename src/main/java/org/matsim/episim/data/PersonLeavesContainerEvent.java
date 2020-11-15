@@ -62,7 +62,7 @@ public interface PersonLeavesContainerEvent extends EpisimEvent, Iterable<Person
 	static PersonLeavesContainerEvent newInstance(Id<Person> person, EpisimContainer container,
 												  EpisimConfigGroup.InfectionParams param,
 												  int leaveTime, int enterTime, List<PersonContact> contacts) {
-		return new PersonLeavesContainerEventImpl(person, container, param, leaveTime, enterTime, contacts);
+		return new PersonLeavesContainerEventImpl(person, container, param, null, null, leaveTime, enterTime, contacts);
 	}
 
 }

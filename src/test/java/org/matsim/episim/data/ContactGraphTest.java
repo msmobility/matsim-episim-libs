@@ -92,6 +92,9 @@ public class ContactGraphTest {
 						p.getOffset() == 500 && p.getDuration() == 700)
 				.hasSize(1);
 
+		assertThat(ev.getContact(0).getOffset()).isEqualTo(500);
+		assertThat(ev.getContact(0).getDuration()).isEqualTo(700);
+
 		assertThat(it.hasNext()).isTrue();
 
 		PersonEntersContainerEvent en = (PersonEntersContainerEvent) it.next();

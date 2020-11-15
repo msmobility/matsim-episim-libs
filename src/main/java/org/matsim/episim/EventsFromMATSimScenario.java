@@ -22,6 +22,7 @@ import org.matsim.episim.data.EpisimEvent;
 import org.matsim.episim.data.EpisimEventProvider;
 import org.matsim.episim.data.EpisimPerson;
 import org.matsim.facilities.ActivityFacility;
+import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.matsim.vehicles.Vehicle;
 
 import javax.inject.Inject;
@@ -96,6 +97,8 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 	@Override
 	public void init() {
 
+		log.info("Init events from scenario input");
+
 		Object2IntMap<MutableEpisimContainer> groupSize = new Object2IntOpenHashMap<>();
 		Object2IntMap<MutableEpisimContainer> totalUsers = new Object2IntOpenHashMap<>();
 		Object2IntMap<MutableEpisimContainer> maxGroupSize = new Object2IntOpenHashMap<>();
@@ -129,8 +132,7 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 				if (event instanceof HasPersonId) {
 					if (!shouldHandlePersonEvent((HasPersonId) event)) continue;
 
-					// TODO: reporting should not be needed
-					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), p -> new MutableEpisimPerson(p, null, reporting));
+					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), this::createPerson);
 
 					// If a person was added late, previous days are initialized at home
 					for (int i = 1; i < day.getValue(); i++) {
@@ -359,6 +361,29 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 		personMap.values().forEach(p -> p.getSpentTime().clear());
 
 		init = true;
+	}
+
+	/**
+	 * Check whether two days have the same events.
+	 */
+	boolean haveSameEvents(DayOfWeek day, DayOfWeek otherDay) {
+		return events.get(day) == events.get(otherDay);
+	}
+
+	/**
+	 * Create Episim person.
+	 */
+	private MutableEpisimPerson createPerson(Id<Person> id) {
+
+		Person person = scenario.getPopulation().getPersons().get(id);
+		Attributes attrs;
+		if (person != null) {
+			attrs = person.getAttributes();
+		} else {
+			attrs = new Attributes();
+		}
+
+		return new MutableEpisimPerson(id, attrs, false, reporting);
 	}
 
 	/**
@@ -601,11 +626,6 @@ public class EventsFromMATSimScenario implements EpisimEventProvider {
 			MutableEpisimContainer firstFacility = this.containerMap.get(firstFacilityId);
 			firstFacility.addPerson(person, now);
 		}
-	}
-
-	@Override
-	public void reset(int iteration) {
-
 	}
 
 	@Override

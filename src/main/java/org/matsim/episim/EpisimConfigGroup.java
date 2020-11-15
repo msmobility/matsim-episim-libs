@@ -38,6 +38,7 @@ import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.ShutdownPolicy;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.time.DayOfWeek;
@@ -53,6 +54,7 @@ public final class EpisimConfigGroup extends ReflectiveConfigGroup {
 	private static final Splitter.MapSplitter SPLITTER = Splitter.on(";").withKeyValueSeparator("=");
 	private static final Joiner.MapJoiner JOINER = Joiner.on(";").withKeyValueSeparator("=");
 
+	private static final String INPUT_GRAPH_FILE = "inputGraphFile";
 	private static final String WRITE_EVENTS = "writeEvents";
 	private static final String CALIBRATION_PARAMETER = "calibrationParameter";
 	private static final String HOSPITAL_FACTOR = "hospitalFactor";
@@ -124,6 +126,8 @@ public final class EpisimConfigGroup extends ReflectiveConfigGroup {
 	 * How the internal rng state should be handled.
 	 */
 	private SnapshotSeed snapshotSeed = SnapshotSeed.restore;
+
+	private String inputGraphFile = null;
 	private FacilitiesHandling facilitiesHandling = FacilitiesHandling.snz;
 	private Config policyConfig = ConfigFactory.empty();
 	private Config progressionConfig = ConfigFactory.empty();
@@ -156,6 +160,20 @@ public final class EpisimConfigGroup extends ReflectiveConfigGroup {
 		clearParameterSetsForType(EventFileParams.SET_TYPE);
 		addInputEventsFile(inputEventsFile)
 				.addDays(DayOfWeek.values());
+	}
+
+	/**
+	 * Optional path to input graph file.
+	 */
+	@Nullable
+	@StringGetter(INPUT_GRAPH_FILE)
+	public String getInputGraphFile() {
+		return inputGraphFile;
+	}
+
+	@StringSetter(INPUT_GRAPH_FILE)
+	public void setInputGraphFile(String inputGraphFile) {
+		this.inputGraphFile = inputGraphFile;
 	}
 
 	@StringGetter(WRITE_EVENTS)

@@ -3,12 +3,10 @@ package org.matsim.episim.data;
 import org.apache.commons.lang3.NotImplementedException;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.episim.EpisimUtils;
 import org.matsim.episim.MutableEpisimPerson;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 import java.util.Map;
 
 public interface EpisimContainer {
@@ -44,12 +42,31 @@ public interface EpisimContainer {
 	 */
 	double getNumSpaces();
 
-	default void write(ObjectOutput out) throws IOException {
-		throw new NotImplementedException("Not implemented");
+	/**
+	 * Write container data to output stream.
+	 */
+	default void write(DataOutput out) throws IOException {
+		EpisimUtils.writeChars(out, getContainerId().toString());
+		out.writeBoolean(isVehicle());
+		out.writeInt(getMaxGroupSize());
+		out.writeInt(getTotalUsers());
+		out.writeInt(getTypicalCapacity());
+		out.writeDouble(getNumSpaces());
 	}
 
-	default void read(ObjectInput in, Map<Id<Person>, MutableEpisimPerson> persons) throws IOException {
-		throw new NotImplementedException("Not implemented");
+	/**
+	 * Read container from input stream
+	 */
+	static EpisimContainer read(DataInput in) throws IOException {
+
+		Id<EpisimContainer> id = Id.create(EpisimUtils.readChars(in), EpisimContainer.class);
+		boolean isVehicle = in.readBoolean();
+		int maxGroupSize = in.readInt();
+		int totalUsers = in.readInt();
+		int typicalCapacity = in.readInt();
+		double numSpaces = in.readDouble();
+
+		return new EpisimContainerImpl(id, isVehicle, maxGroupSize, totalUsers, typicalCapacity, numSpaces);
 	}
 
 	/**

@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -196,7 +197,7 @@ public final class EpisimUtils {
 	 * E.g. if there are the entries 01.01=1 and 10.01=10 then interpolation for
 	 * 05.01 will be 5
 	 *
-	 * @param map map of target values.
+	 * @param map  map of target values.
 	 * @param date date to interpolate.
 	 * @return interpolated values (or exact if entry is in map)
 	 */
@@ -214,7 +215,7 @@ public final class EpisimUtils {
 
 		double between = ChronoUnit.DAYS.between(floor.getKey(), ceil.getKey());
 		double diff = ChronoUnit.DAYS.between(floor.getKey(), date);
-		return floor.getValue().doubleValue() +  diff * (ceil.getValue().doubleValue() - floor.getValue().doubleValue()) / between;
+		return floor.getValue().doubleValue() + diff * (ceil.getValue().doubleValue() - floor.getValue().doubleValue()) / between;
 	}
 
 	/**
@@ -239,6 +240,31 @@ public final class EpisimUtils {
 				out.closeArchiveEntry();
 			}
 		}
+	}
+
+	/**
+	 * Create a Data output stream for writing to a zip archive.
+	 */
+	public static void writeTarArchiveEntry(ArchiveOutputStream archive, String name, ConsumerWithIO<DataOutputStream> f) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(bytes);
+		f.accept(out);
+		out.flush();
+
+		// need to create temporary byte array to determine the size
+		TarArchiveEntry entry = new TarArchiveEntry(name);
+		entry.setSize(bytes.size());
+		archive.putArchiveEntry(entry);
+		archive.write(bytes.toByteArray());
+		bytes.close();
+
+		archive.closeArchiveEntry();
+	}
+
+	@FunctionalInterface
+	interface ConsumerWithIO<T> {
+
+		void accept(T o) throws IOException;
 	}
 
 	/**
@@ -701,22 +727,22 @@ public final class EpisimUtils {
 		}
 	}
 
-	public static int getAge( EpisimPerson person ){
+	public static int getAge(EpisimPerson person) {
 		int age = -1;
 
-		for( String attr : person.getAttributes().getAsMap().keySet() ){
-			if( attr.contains( "age" ) ){
-				age = (int) person.getAttributes().getAttribute( attr );
+		for (String attr : person.getAttributes().getAsMap().keySet()) {
+			if (attr.contains("age")) {
+				age = (int) person.getAttributes().getAttribute(attr);
 				break;
 			}
 		}
 
-		if( age == -1 ){
-			throw new RuntimeException( "Person=" + person.getPersonId().toString() + " has no age. Age dependent progression is not possible." );
+		if (age == -1) {
+			throw new RuntimeException("Person=" + person.getPersonId().toString() + " has no age. Age dependent progression is not possible.");
 		}
 
-		if( age < 0 || age > 120 ){
-			throw new RuntimeException( "Age of person=" + person.getPersonId().toString() + " is not plausible. Age is=" + age );
+		if (age < 0 || age > 120) {
+			throw new RuntimeException("Age of person=" + person.getPersonId().toString() + " is not plausible. Age is=" + age);
 		}
 		return age;
 	}
