@@ -123,6 +123,22 @@ abstract class AbstractProgressionModel implements ProgressionModel, Externaliza
 	}
 
 	@Override
+	public EpisimPerson.DiseaseStatus getNextDiseaseStatus(Id<Person> personId) {
+		long value = nextStateAndDay.getOrDefault(personId, 0);
+		int nextState = (int) (value >> 32);
+		return EpisimPerson.DiseaseStatus.values()[nextState];
+	}
+
+	@Override
+	public int getNextTransitionDays(Id<Person> personId) {
+		long value = nextStateAndDay.getOrDefault(personId, 0);
+		if (value == 0)
+			return -1;
+
+		return (int) value;
+	}
+
+	@Override
 	public boolean canProgress(EpisimReporting.InfectionReport report) {
 		return report.nTotalInfected > 0 || report.nInQuarantineFull + report.nInQuarantineHome > 0;
 	}

@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -70,11 +71,11 @@ public class RunParallel<T> implements Callable<Integer> {
 	private Path output;
 
 	public static final String OPTION_SETUP = "--setup";
-	@CommandLine.Option(names = OPTION_SETUP, defaultValue = "${env:EPISIM_SETUP:-org.matsim.run.batch.Percolation}")
+	@CommandLine.Option(names = OPTION_SETUP, defaultValue = "${env:EPISIM_SETUP:-org.matsim.run.batch.BerlinClusterTracing}")
 	private Class<? extends BatchRun<T>> setup;
 
 	public static final String OPTION_PARAMS = "--params";
-	@CommandLine.Option(names = OPTION_PARAMS, defaultValue = "${env:EPISIM_PARAMS:-org.matsim.run.batch.Percolation$Params}")
+	@CommandLine.Option(names = OPTION_PARAMS, defaultValue = "${env:EPISIM_PARAMS:-org.matsim.run.batch.BerlinClusterTracing$Params}")
 	private Class<T> params;
 
 	public static final String OPTION_THREADS = "--threads";
@@ -167,8 +168,8 @@ public class RunParallel<T> implements Callable<Integer> {
 			boolean sameInput = episimBase.getInputEventsFiles().containsAll(episimConfig.getInputEventsFiles()) &&
 								episimConfig.getInputEventsFiles().containsAll(episimBase.getInputEventsFiles());
 
-			sameInput &= baseConfig.vehicles().getVehiclesFile().equals(run.config.vehicles().getVehiclesFile());
-			sameInput &= baseConfig.plans().getInputFile().equals(run.config.plans().getInputFile());
+			sameInput &= Objects.equals(baseConfig.vehicles().getVehiclesFile(), run.config.vehicles().getVehiclesFile());
+			sameInput &= Objects.equals(baseConfig.plans().getInputFile(), run.config.plans().getInputFile());
 
 			if (!noReuse && !sameInput) {
 				log.error("Input files differs for run {}", run.id);
