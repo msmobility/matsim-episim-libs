@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.google.inject.util.Modules;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.episim.data.EpisimEventProvider;
+import org.matsim.run.modules.SnzBerlinProductionScenario;
 import org.matsim.run.modules.SnzBerlinWeekScenario2020;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -41,7 +42,7 @@ public class BenchmarkIteration {
 	@Setup
 	public void setup() {
 
-		Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(new SnzBerlinWeekScenario2020()));
+		Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(new SnzBerlinProductionScenario()));
 
 		//injector.getInstance(EpisimConfigGroup.class).setWriteEvents(EpisimConfigGroup.WriteEvents.tracing);
 		//injector.getInstance(TracingConfigGroup.class).setPutTraceablePersonsInQuarantineAfterDay(0);
