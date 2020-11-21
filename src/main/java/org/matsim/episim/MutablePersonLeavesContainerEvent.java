@@ -24,11 +24,6 @@ final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEv
 	 */
 	private final MutablePersonContact contact = new MutablePersonContact();
 
-	/**
-	 * Reusable iterator.
-	 */
-	private final ContactIterator it = new ContactIterator();
-
 	MutablePersonLeavesContainerEvent setContext(int now, MutableEpisimPerson person, MutableEpisimContainer container,
 												 EpisimConfigGroup.InfectionParams actType) {
 		this.now = now;
@@ -93,8 +88,7 @@ final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEv
 
 	@Override
 	public Iterator<PersonContact> iterator() {
-		it.reset();
-		return it;
+		return new ContactIterator();
 	}
 
 	@Override
@@ -162,14 +156,11 @@ final class MutablePersonLeavesContainerEvent implements PersonLeavesContainerEv
 	private final class ContactIterator implements Iterator<PersonContact> {
 
 		private int index = 0;
-
-		private void reset() {
-			index = 0;
-		}
+		private final int numContacts = getNumberOfContacts();
 
 		@Override
 		public boolean hasNext() {
-			return index < getNumberOfContacts();
+			return index < numContacts;
 		}
 
 		@Override

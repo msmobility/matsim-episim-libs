@@ -90,12 +90,12 @@ public final class SymmetricContactModel extends AbstractContactModel {
 
 		for (PersonContact contact : event) {
 
-			MutableEpisimPerson contactPerson = persons.get(contact.getContactPerson());
-
-			// no contact with self, especially no tracing
-			if (personLeavingContainer == contactPerson) {
+			double nSpacesPerFacility = container.getNumSpaces();
+			if (rnd.nextDouble() > 1. / nSpacesPerFacility) { // i.e. other person is in other space
 				continue;
 			}
+
+			MutableEpisimPerson contactPerson = persons.get(contact.getContactPerson());
 
 			int maxPersonsInContainer = (int) (container.getMaxGroupSize() * episimConfig.getSampleSize());
 			// typical size is undefined if no vehicle file is used
@@ -124,11 +124,6 @@ public final class SymmetricContactModel extends AbstractContactModel {
 			// if we want superspreading events, then maxInteractions needs to be much larger than 3 or 10.
 
 			*/
-
-			double nSpacesPerFacility = container.getNumSpaces();
-			if (rnd.nextDouble() > 1. / nSpacesPerFacility) { // i.e. other person is in other space
-				continue;
-			}
 
 			if (!personRelevantForTrackingOrInfectionDynamics(contactPerson, event, getRestrictions(), rnd)) {
 				continue;
