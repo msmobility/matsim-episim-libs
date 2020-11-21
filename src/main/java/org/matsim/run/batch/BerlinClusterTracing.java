@@ -28,6 +28,7 @@ import com.google.inject.util.Modules;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
+import org.matsim.episim.data.EpisimPerson;
 import org.matsim.episim.model.AgeDependentProgressionModel;
 import org.matsim.episim.model.ConfigurableProgressionModel;
 import org.matsim.episim.model.ProgressionModel;

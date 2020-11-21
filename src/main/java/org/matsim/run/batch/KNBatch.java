@@ -9,6 +9,7 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
+import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.model.*;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.run.RunParallel;
@@ -136,7 +137,7 @@ public class KNBatch implements BatchRun<KNBatch.Params> {
 			return delegate.getNextTransitionDays(personId);
 		}
 
-		@Override public EpisimPerson.DiseaseStatus getNextDiseaseStatus(Id<Person> personId) {
+		@Override public DiseaseStatus getNextDiseaseStatus(Id<Person> personId) {
 			return delegate.getNextDiseaseStatus(personId);
 		}
 

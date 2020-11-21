@@ -66,6 +66,6 @@ public interface ProgressionModel {
 	 * Next disease status this person will go into.
 	 * @return next state or susceptible if there is none.
 	 */
-	EpisimPerson.DiseaseStatus getNextDiseaseStatus(Id<Person> personId);
+	DiseaseStatus getNextDiseaseStatus(Id<Person> personId);
 
 }

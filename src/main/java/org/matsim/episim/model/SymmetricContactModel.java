@@ -24,14 +24,16 @@ import com.google.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.core.config.Config;
-import org.matsim.episim.*;
-
-import java.util.SplittableRandom;
-
+import org.matsim.episim.EpisimConfigGroup;
+import org.matsim.episim.EpisimReporting;
+import org.matsim.episim.MutableEpisimPerson;
+import org.matsim.episim.TracingConfigGroup;
 import org.matsim.episim.data.DiseaseStatus;
 import org.matsim.episim.data.EpisimContainer;
 import org.matsim.episim.data.PersonContact;
 import org.matsim.episim.data.PersonLeavesContainerEvent;
+
+import java.util.SplittableRandom;
 
 /**
  * Variant of the {@link DefaultContactModel} with symmetric interactions.
