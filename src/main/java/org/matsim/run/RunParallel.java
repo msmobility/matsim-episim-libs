@@ -33,6 +33,7 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
+import org.matsim.episim.data.EpisimEventProvider;
 import picocli.CommandLine;
 
 import javax.annotation.Nullable;
@@ -138,7 +139,8 @@ public class RunParallel<T> implements Callable<Integer> {
 		EpisimConfigGroup episimBase = ConfigUtils.addOrGetModule(baseConfig, EpisimConfigGroup.class);
 
 		Scenario scenario = null;
-		InputEventProvider replay = null;
+		// either input provider for event provider, depending on input
+		Object provider = null;
 
 		if (noReuse) {
 			log.info("Reusing scenario and events is disabled.");
@@ -150,7 +152,10 @@ public class RunParallel<T> implements Callable<Integer> {
 			Injector injector = Guice.createInjector(Modules.override(new EpisimModule()).with(base));
 
 			scenario = injector.getInstance(Scenario.class);
-			replay = injector.getInstance(InputEventProvider.class);
+			if (episimBase.getInputGraphFile() != null)
+				provider = injector.getInstance(EpisimEventProvider.class);
+			else
+				provider = injector.getInstance(InputEventProvider.class);
 		}
 
 		int i = 0;
@@ -166,6 +171,7 @@ public class RunParallel<T> implements Callable<Integer> {
 			EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(run.config, EpisimConfigGroup.class);
 
 			boolean sameInput = episimBase.getInputEventsFiles().containsAll(episimConfig.getInputEventsFiles()) &&
+								Objects.equals(episimBase.getInputGraphFile(), episimConfig.getInputGraphFile()) &&
 								episimConfig.getInputEventsFiles().containsAll(episimBase.getInputEventsFiles());
 
 			sameInput &= Objects.equals(baseConfig.vehicles().getVehiclesFile(), run.config.vehicles().getVehiclesFile());
@@ -182,7 +188,7 @@ public class RunParallel<T> implements Callable<Integer> {
 			run.config.setContext(context);
 
 			futures.add(CompletableFuture.runAsync(
-					new Task(((BatchRun) prepare.setup).getBindings(run.id, run.args), new ParallelModule(run.config, scenario, replay), maxIterations), executor)
+					new Task(((BatchRun) prepare.setup).getBindings(run.id, run.args), new ParallelModule(run.config, scenario, provider), maxIterations), executor)
 					.exceptionally(t -> {
 						log.error("Task {} failed", outputPath, t);
 						return null;
@@ -204,12 +210,12 @@ public class RunParallel<T> implements Callable<Integer> {
 
 		private final Config config;
 		private final Scenario scenario;
-		private final InputEventProvider replay;
+		private final Object provider;
 
-		private ParallelModule(Config config, @Nullable Scenario scenario, InputEventProvider replay) {
+		private ParallelModule(Config config, @Nullable Scenario scenario, Object replay) {
 			this.scenario = scenario;
 			this.config = config;
-			this.replay = replay;
+			this.provider = replay;
 		}
 
 		@Override
@@ -218,7 +224,12 @@ public class RunParallel<T> implements Callable<Integer> {
 
 			if (scenario != null) {
 				bind(Scenario.class).toInstance(scenario);
-				bind(InputEventProvider.class).toInstance(replay);
+				if (provider instanceof InputEventProvider)
+					bind(InputEventProvider.class).toInstance((InputEventProvider) provider);
+				else if (provider instanceof EventsFromContactGraph)
+					bind(EpisimEventProvider.class).toInstance((EpisimEventProvider) provider);
+				else
+					throw new IllegalStateException("Unknown event provider.");
 			}
 		}
 	}

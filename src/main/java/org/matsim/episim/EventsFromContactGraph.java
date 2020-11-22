@@ -46,6 +46,11 @@ public class EventsFromContactGraph implements EpisimEventProvider {
 	private final Int2ObjectMap<EpisimContainer> container = new Int2ObjectOpenHashMap<>();
 
 	/**
+	 * Flag if init was already called.
+	 */
+	private boolean init = false;
+
+	/**
 	 * Write file with contact graph from MATSim scenario.
 	 */
 	public static void writeGraph(Path output,
@@ -124,13 +129,16 @@ public class EventsFromContactGraph implements EpisimEventProvider {
 	@Inject
 	public EventsFromContactGraph(Config config) {
 		this.episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
+		this.init();
 	}
 
 	@Override
-	public void init() {
+	public synchronized void init() {
+
+		if (init) return;
 
 		log.info("Init events from contact graph");
-
+		init = true;
 
 		try (var in = new LZ4FrameInputStream(Files.newInputStream(Path.of(episimConfig.getInputGraphFile())))) {
 
