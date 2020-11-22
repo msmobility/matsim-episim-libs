@@ -24,12 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ContactGraphTest {
 
-	private Config config = EpisimTestUtils.createTestConfig();
-	private List<EpisimConfigGroup.InfectionParams> infectionParams =
+	Config config = EpisimTestUtils.createTestConfig();
+	List<EpisimConfigGroup.InfectionParams> infectionParams =
 			new ArrayList<>(ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class).getInfectionParams());
 
-	private static final Int2ObjectMap<EpisimContainer> container = new Int2ObjectArrayMap<>();
-	private static final Int2ObjectMap<Id<Person>> persons = new Int2ObjectArrayMap<>();
+	static final Int2ObjectMap<EpisimContainer> container = new Int2ObjectArrayMap<>();
+	static final Int2ObjectMap<Id<Person>> persons = new Int2ObjectArrayMap<>();
 
 	static {
 		for (int i = 0; i < 5; i++) {
@@ -84,7 +84,7 @@ public class ContactGraphTest {
 
 		assertThat(ev.getPersonId()).isEqualTo(persons.get(1));
 		assertThat(ev.getContainer()).isEqualTo(container.get(2));
-		assertThat(ev.getTime()).isEqualTo(5000);
+		assertThat(ev.getTime()).isEqualTo(5001);
 
 		assertThat(ev)
 				.allMatch(p -> p.getContactPerson().equals(persons.get(4)) &&
@@ -107,7 +107,7 @@ public class ContactGraphTest {
 		assertThat(it.hasNext()).isFalse();
 	}
 
-	private List<EpisimEvent> generateEvents() {
+	List<EpisimEvent> generateEvents() {
 		return List.of(
 				PersonLeavesContainerEvent.newInstance(
 						persons.get(0),
@@ -134,7 +134,7 @@ public class ContactGraphTest {
 						persons.get(1),
 						container.get(2),
 						infectionParams.get(1),
-						5000,
+						5001,
 						7000,
 						List.of(
 								PersonContact.newInstance(

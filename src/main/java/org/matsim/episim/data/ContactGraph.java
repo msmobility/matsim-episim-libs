@@ -100,14 +100,14 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 	/**
 	 * Number of bytes per event entry.
 	 */
-	private static final int EVENT_BYTES = 22;
+	private static final int EVENT_BYTES = 26;
 
 	/**
 	 * Array of events when person leaves a "container". Order by leave time.
 	 * <p>
 	 * One entry has the following length and data format:
 	 * <p>
-	 * 8bit 32bit 32bit 8bit 16bit 16bit 8bit 8bit 32bit 16bit = 176bit
+	 * 8bit 32bit 32bit 8bit 32bit 32bit 8bit 8bit 32bit 16bit = 176bit
 	 * <p>
 	 * eventType personId containerId activity time enterTime nextActivity prevActivity contactIndex nContacts
 	 * <p>
@@ -228,6 +228,8 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 				lv.setContainerId(e.getContainer().getContainerId().index());
 				lv.setPersonId(e.getPersonId().index());
 				lv.setActivity(e.getActivity());
+				lv.setNextActivity(e.getNextActivity());
+				lv.setPrevActivity(e.getPrevActivity());
 				lv.setEnterTime(e.getEnterTime());
 				lv.setTime(e.getTime());
 				lv.setNumberOfContacts(e.getNumberOfContacts());
@@ -307,11 +309,11 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 		}
 
 		public int getTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 10)) >> 2;
+			return UNSAFE.getInt(addr + 10);
 		}
 
 		protected void setTime(int time) {
-			UNSAFE.putShort(addr + 10, (short) (time << 2));
+			UNSAFE.putInt(addr + 10, time);
 		}
 
 		public Id<Person> getPersonId() {
@@ -360,7 +362,7 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 		@Nullable
 		@Override
 		public EpisimConfigGroup.InfectionParams getNextActivity() {
-			byte value = UNSAFE.getByte(addr + 14);
+			byte value = UNSAFE.getByte(addr + 18);
 			return value == -1 ? null : activityTypes[value];
 		}
 
@@ -372,7 +374,7 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 		@Nullable
 		@Override
 		public EpisimConfigGroup.InfectionParams getPrevActivity() {
-			byte value = UNSAFE.getByte(addr + 15);
+			byte value = UNSAFE.getByte(addr + 19);
 			return value == -1 ? null : activityTypes[value];
 		}
 
@@ -382,30 +384,30 @@ public class ContactGraph implements Iterable<EpisimEvent>, Closeable {
 		}
 
 		public int getEnterTime() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 12)) >> 2;
+			return UNSAFE.getInt(addr + 14);
 		}
 
 		private void setEnterTime(int time) {
-			UNSAFE.putShort(addr + 12, (short) (time << 2));
+			UNSAFE.putInt(addr + 14, time);
 		}
 
 		/**
 		 * Index to {@link #contacts}.
 		 */
 		private int getContactIndex() {
-			return UNSAFE.getInt(addr + 16);
+			return UNSAFE.getInt(addr + 20);
 		}
 
 		private void setContactIndex(int index) {
-			UNSAFE.putInt(addr + 16, index);
+			UNSAFE.putInt(addr + 20, index);
 		}
 
 		public int getNumberOfContacts() {
-			return Short.toUnsignedInt(UNSAFE.getShort(addr + 20));
+			return Short.toUnsignedInt(UNSAFE.getShort(addr + 24));
 		}
 
 		private void setNumberOfContacts(int n) {
-			UNSAFE.putShort(addr + 20, (short) n);
+			UNSAFE.putShort(addr + 24, (short) n);
 		}
 
 		@Override
