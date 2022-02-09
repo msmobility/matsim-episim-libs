@@ -37,7 +37,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.episim.EpisimModule;
 import org.matsim.episim.EpisimRunner;
-import org.matsim.run.modules.OpenBerlinScenario;
+import org.matsim.run.modules.*;
 import picocli.CommandLine;
 
 import java.lang.reflect.Constructor;
@@ -223,10 +223,17 @@ public final class RunEpisim implements Callable<Integer> {
 			modules.add(new ConfigHolder());
 		}
 
+		MunichScenario munichScenario = new MunichScenario();
+		Config config = munichScenario.config();
 		if (modules.isEmpty()) {
+			log.info("Using default MunichScenario");
+			modules.add(munichScenario);
+		}
+
+		/*if (modules.isEmpty()) {
 			log.info("Using default OpenBerlinScenario");
 			modules.add(new OpenBerlinScenario());
-		}
+		}*/
 
 		log.info("Starting with modules: {}", modules);
 
@@ -240,7 +247,7 @@ public final class RunEpisim implements Callable<Integer> {
 
 		printBindings(injector);
 
-		Config config = injector.getInstance(Config.class);
+		//Config config = injector.getInstance(Config.class); // used when OpenBerlin is running
 
 		// We collect the remaining unparsed options and give them to the MATSim command line util
 		// it will parse options to modify the config like --config:controler.runId
