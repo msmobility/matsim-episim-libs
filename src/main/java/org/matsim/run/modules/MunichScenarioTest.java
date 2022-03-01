@@ -26,8 +26,6 @@ import com.google.inject.Singleton;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
-import org.matsim.episim.policy.FixedPolicy;
-import org.matsim.episim.policy.Restriction;
 
 /**
  * Scenario based on the publicly available OpenBerlin scenario (https://github.com/matsim-scenarios/matsim-berlin).
@@ -38,30 +36,41 @@ public class MunichScenarioTest extends AbstractModule {
 	 * Activity names of the default params from {@link #addDefaultParams(EpisimConfigGroup)}.
 	 */
 	public static final String[] DEFAULT_ACTIVITIES = {
-			"pt", "work", "leisure", "edu", "shop", "errands", "business", "other", "freight", "home"
+			"pt", "work", "education", "shopping", "other", "home"
 	};
 
 	/**
 	 * Adds default parameters that should be valid for most scenarios.
 	 */
+/*	public static void addDefaultParams(EpisimConfigGroup config) {
+		// pt
+		config.getOrAddContainerParams("pt", "tr").setContactIntensity(10.).setSpacesPerFacility(20);
+		// regular out-of-home acts:
+		config.getOrAddContainerParams("work").setContactIntensity(1.47).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("education").setContactIntensity(11.).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("shopping").setContactIntensity(0.88).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("other").setContactIntensity(9.24).setSpacesPerFacility(20);
+		// freight act:
+		//config.getOrAddContainerParams("freight");
+		// home act:
+		config.getOrAddContainerParams("home").setContactIntensity(1.).setSpacesPerFacility(1.);
+		config.getOrAddContainerParams("quarantine_home").setContactIntensity(1.).setSpacesPerFacility(1.);
+	}*/
+
 	public static void addDefaultParams(EpisimConfigGroup config) {
 		// pt
-		config.getOrAddContainerParams("pt", "tr");
+		config.getOrAddContainerParams("pt", "veh").setContactIntensity(1.);
 		// regular out-of-home acts:
-		config.getOrAddContainerParams("work");
-		config.getOrAddContainerParams("leisure", "leis");
-		config.getOrAddContainerParams("edu");
-		config.getOrAddContainerParams("shop");
-		config.getOrAddContainerParams("errands");
-		config.getOrAddContainerParams("business");
-		config.getOrAddContainerParams("other");
+		config.getOrAddContainerParams("work").setContactIntensity(1.);
+		config.getOrAddContainerParams("education").setContactIntensity(1.);
+		config.getOrAddContainerParams("shopping").setContactIntensity(1.);
+		config.getOrAddContainerParams("other").setContactIntensity(1.);
 		// freight act:
-		config.getOrAddContainerParams("freight");
+		//config.getOrAddContainerParams("freight");
 		// home act:
-		config.getOrAddContainerParams("home");
-		config.getOrAddContainerParams("quarantine_home");
+		config.getOrAddContainerParams("home").setContactIntensity(1.).setSpacesPerFacility(1.);
+		config.getOrAddContainerParams("quarantine_home").setContactIntensity(1.).setSpacesPerFacility(1.);
 	}
-
 	@Provides
 	@Singleton
 	public Config config() {
@@ -69,33 +78,33 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.network().setInputFile("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-10pct/input/berlin-v5-network.xml.gz");
+		config.controler().setOutputDirectory("F:\\models\\tengos_episim\\scenOutput/munich_5pt_facilities_100mGrid_sample0.05_contactIntensity1.0_initial500_max3_hospital1.6_ptOnly");
+		config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
+		episimConfig.setInputEventsFile("F:\\models\\tengos_episim\\input/output_events_5pt_facilities_100mGrid_filtered_ptOnly.xml.gz");
+		config.network().setInputFile("F:\\models\\tengos_episim\\input/output_network.xml.gz");
 
-		// String episimEvents_1pct = "../public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-1pct-schools/output-berlin-v5.4-1pct-schools/berlin-v5.4-1pct-schools.output_events_for_episim.xml.gz";
-		// String episimEvents_1pct = "../public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-1pct/output-berlin-v5.4-1pct/berlin-v5.4-1pct.output_events_for_episim.xml.gz";
-		// String episimEvents_10pct = "../public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-10pct-schools/output-berlin-v5.4-10pct-schools/berlin-v5.4-10pct-schools.output_events_for_episim.xml.gz";
+		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.snz);//snz: run with facility file
 
-		String url = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-1pct/output-berlin-v5.4-1pct/berlin-v5.4-1pct.output_events_for_episim.xml.gz";
+		episimConfig.setInitialInfections(500);
+		episimConfig.setSampleSize(0.05);//100% of the 5% matsim simulation
+		episimConfig.setCalibrationParameter(0.000_011_0);//what's this?
+		episimConfig.setMaxContacts(3);
+		String startDate = "2020-02-16";
+		episimConfig.setStartDate(startDate);
+		episimConfig.setHospitalFactor(1.6);
 
-		episimConfig.setInputEventsFile(url);
-
-		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.bln);
-		episimConfig.setSampleSize(0.01);
-		episimConfig.setCalibrationParameter(2);
-		//  episimConfig.setOutputEventsFolder("events");
-
-		long closingIteration = 14;
+		//long closingIteration = 14;
 
 		addDefaultParams(episimConfig);
 
-		episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
-				.restrict(closingIteration, Restriction.of(0.0), "leisure", "edu")
-				.restrict(closingIteration, Restriction.of(0.2), "work", "business", "other")
-				.restrict(closingIteration, Restriction.of(0.3), "shop", "errands")
+		/*episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
+				.restrict(closingIteration, Restriction.of(0.0),  "education")
+				.restrict(closingIteration, Restriction.of(0.2), "work", "other")
+				.restrict(closingIteration, Restriction.of(0.3), "shopping")
 				.restrict(closingIteration, Restriction.of(0.5), "pt")
 				.restrict(closingIteration + 60, Restriction.of(1.0), DEFAULT_ACTIVITIES)
 				.build()
-		);
+		);*/
 
 		return config;
 	}
