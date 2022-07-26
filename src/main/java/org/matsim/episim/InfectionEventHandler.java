@@ -40,11 +40,11 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.episim.events.EpisimInfectionEvent;
-import org.matsim.episim.events.EpisimPotentialInfectionEvent;
 import org.matsim.episim.model.*;
 import org.matsim.episim.model.activity.ActivityParticipationModel;
 import org.matsim.episim.model.testing.TestingModel;
 import org.matsim.episim.model.vaccination.VaccinationModel;
+import org.matsim.episim.munich.SiloPerson;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.ShutdownPolicy;
 import org.matsim.facilities.ActivityFacility;
@@ -101,6 +101,8 @@ public final class InfectionEventHandler implements Externalizable {
 	 * List of trajectory handlers that can be run in parallel.
 	 */
 	private final List<TrajectoryHandler> handlers = new ArrayList<>();
+
+	private final Map<Integer, SiloPerson> siloPersonMap = new HashMap<>();
 
 	private final Map<Id<Person>, EpisimPerson> personMap = new IdMap<>(Person.class);
 	private final Map<Id<Vehicle>, EpisimVehicle> vehicleMap = new IdMap<>(Vehicle.class);
@@ -307,6 +309,16 @@ public final class InfectionEventHandler implements Externalizable {
 				// Add all person and facilities
 				if (event instanceof HasPersonId) {
 					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), this::createPerson);
+					int siloPersonId = Integer.parseInt(person.getPersonId().toString());
+					SiloPerson siloPerson = this.siloPersonMap.get(siloPersonId);
+
+					if (siloPerson==null){
+						siloPerson = new SiloPerson(siloPersonId);
+						siloPersonMap.put(siloPersonId, siloPerson);
+					}
+
+					person.setSiloPerson(siloPerson);
+
 
 					// If a person was added late, previous days are initialized at home
 					for (int i = 1; i < day.getValue(); i++) {
@@ -928,6 +940,10 @@ public final class InfectionEventHandler implements Externalizable {
 			l.onIterationEnd(iteration, episimConfig.getStartDate().plusDays(iteration - 1));
 		}
 
+	}
+
+	public Map<Integer, SiloPerson> getSiloPersonMap() {
+		return siloPersonMap;
 	}
 
 	/**

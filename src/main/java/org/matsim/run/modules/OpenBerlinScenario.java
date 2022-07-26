@@ -68,6 +68,7 @@ public class OpenBerlinScenario extends AbstractModule {
 
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
+		config.controler().setOutputDirectory("F:\\models\\tengos_episim\\scenOutput/berlin_1pt_facilities_bln_sample0.01_contactIntensity1.0_initial500_max3_hospital1.6_test");
 
 		config.network().setInputFile("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/berlin/berlin-v5.4-10pct/input/berlin-v5-network.xml.gz");
 
@@ -80,22 +81,26 @@ public class OpenBerlinScenario extends AbstractModule {
 		episimConfig.setInputEventsFile(url);
 
 		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.bln);
+		episimConfig.setInitialInfections(500);
 		episimConfig.setSampleSize(0.01);
-		episimConfig.setCalibrationParameter(2);
-		//  episimConfig.setOutputEventsFolder("events");
+		episimConfig.setCalibrationParameter(0.000_011_0);//what's this?
+		episimConfig.setMaxContacts(3);
+		String startDate = "2020-02-16";
+		episimConfig.setStartDate(startDate);
+		episimConfig.setHospitalFactor(1.6);
 
-		long closingIteration = 14;
+		//long closingIteration = 14;
 
 		addDefaultParams(episimConfig);
 
-		episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
+		/*episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
 				.restrict(closingIteration, Restriction.of(0.0), "leisure", "edu")
 				.restrict(closingIteration, Restriction.of(0.2), "work", "business", "other")
 				.restrict(closingIteration, Restriction.of(0.3), "shop", "errands")
 				.restrict(closingIteration, Restriction.of(0.5), "pt")
 				.restrict(closingIteration + 60, Restriction.of(1.0), DEFAULT_ACTIVITIES)
 				.build()
-		);
+		);*/
 
 		return config;
 	}

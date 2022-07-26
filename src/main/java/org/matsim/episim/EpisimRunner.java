@@ -33,6 +33,8 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.ControlerUtils;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.episim.model.ProgressionModel;
+import org.matsim.episim.munich.MatsimId2SiloPersonConverter;
+import org.matsim.episim.munich.SocialNetworkReader;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -44,6 +46,8 @@ import java.nio.file.StandardCopyOption;
 import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Main entry point and runner of one epidemic simulation.
@@ -94,6 +98,10 @@ public final class EpisimRunner {
 
 		ControlerUtils.checkConfigConsistencyAndWriteToLog(config, "Just before starting iterations");
 
+		//read list of trip id-person id
+		MatsimId2SiloPersonConverter converter = new MatsimId2SiloPersonConverter();
+		converter.read();
+
 		handler.init(replay.getEvents());
 
 		Path output = Path.of(config.controler().getOutputDirectory());
@@ -109,6 +117,10 @@ public final class EpisimRunner {
 				return;
 			}
 		}
+
+		//initial social network of episim person
+		SocialNetworkReader socialNetworkReader = new SocialNetworkReader(handler.getSiloPersonMap());
+		socialNetworkReader.read();
 
 		reporting.reportCpuTime(0, "Init", "finished", -1);
 

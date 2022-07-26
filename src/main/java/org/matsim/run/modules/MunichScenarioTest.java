@@ -26,6 +26,8 @@ import com.google.inject.Singleton;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
+import org.matsim.episim.policy.FixedPolicy;
+import org.matsim.episim.policy.Restriction;
 
 /**
  * Scenario based on the publicly available OpenBerlin scenario (https://github.com/matsim-scenarios/matsim-berlin).
@@ -59,12 +61,14 @@ public class MunichScenarioTest extends AbstractModule {
 
 	public static void addDefaultParams(EpisimConfigGroup config) {
 		// pt
-		config.getOrAddContainerParams("pt", "veh").setContactIntensity(1.);
+		config.getOrAddContainerParams("pt", "tr").setContactIntensity(10.).setSpacesPerFacility(20);
 		// regular out-of-home acts:
-		config.getOrAddContainerParams("work").setContactIntensity(1.);
-		config.getOrAddContainerParams("education").setContactIntensity(1.);
-		config.getOrAddContainerParams("shopping").setContactIntensity(1.);
-		config.getOrAddContainerParams("other").setContactIntensity(1.);
+		config.getOrAddContainerParams("work").setContactIntensity(1.47).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("education").setContactIntensity(11.).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("shopping").setContactIntensity(0.88).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("recreation").setContactIntensity(9.24).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("other").setContactIntensity(1.47).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("nursing").setContactIntensity(11.).setSpacesPerFacility(20);
 		// freight act:
 		//config.getOrAddContainerParams("freight");
 		// home act:
@@ -78,16 +82,16 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.controler().setOutputDirectory("F:\\models\\tengos_episim\\scenOutput/munich_5pt_facilities_100mGrid_sample0.05_contactIntensity1.0_initial500_max3_hospital1.6_ptOnly");
-		config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
-		episimConfig.setInputEventsFile("F:\\models\\tengos_episim\\input/output_events_5pt_facilities_100mGrid_filtered_ptOnly.xml.gz");
-		config.network().setInputFile("F:\\models\\tengos_episim\\input/output_network.xml.gz");
-
-		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.snz);//snz: run with facility file
-
+		config.controler().setOutputDirectory("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\episim_sn_joint");
+		//config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
+		episimConfig.setInputEventsFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\episim_sn_joint/output_events-1.0_converted_addFakeActivities.xml.gz");
+		config.network().setInputFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\2011\\trafficAssignment/output_network.xml.gz");
+		//config.plans().setInputFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\2011\\trafficAssignment/output_plans.xml.gz");
+		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.bln);//snz: run with facility file
 		episimConfig.setInitialInfections(500);
-		episimConfig.setSampleSize(0.05);//100% of the 5% matsim simulation
-		episimConfig.setCalibrationParameter(0.000_011_0);//what's this?
+		//episimConfig.setInitialInfectionDistrict("Munich");
+		episimConfig.setSampleSize(1);//100% of the 5% matsim simulation
+		episimConfig.setCalibrationParameter(0.000_011_0);//what's this?0.000_002_6
 		episimConfig.setMaxContacts(3);
 		String startDate = "2020-02-16";
 		episimConfig.setStartDate(startDate);

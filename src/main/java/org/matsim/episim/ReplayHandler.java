@@ -226,10 +226,18 @@ public final class ReplayHandler {
 		} else if (episimConfig.getFacilitiesHandling() == EpisimConfigGroup.FacilitiesHandling.bln) {
 			if (event instanceof ActivityStartEvent) {
 				ActivityStartEvent theEvent = (ActivityStartEvent) event;
-				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				if(theEvent.getActType().split("_")[0] =="nursing_home"||theEvent.getActType().split("_")[0] =="nursing_work"){
+					return Id.create("nursing" + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				}else{
+					return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				}
 			} else if (event instanceof ActivityEndEvent) {
 				ActivityEndEvent theEvent = (ActivityEndEvent) event;
-				return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				if(theEvent.getActType().split("_")[0] =="nursing_home"||theEvent.getActType().split("_")[0] =="nursing_work"){
+					return Id.create("nursing" + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				}else{
+					return Id.create(theEvent.getActType().split("_")[0] + "_" + theEvent.getLinkId().toString(), ActivityFacility.class);
+				}
 			} else {
 				throw new IllegalStateException("unexpected event type=" + ((Event) event).getEventType());
 			}

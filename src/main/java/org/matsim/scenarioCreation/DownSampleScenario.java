@@ -59,16 +59,16 @@ public class DownSampleScenario implements Callable<Integer> {
 
 	private static Logger log = LogManager.getLogger(DownSampleScenario.class);
 
-	@Parameters(paramLabel = "sampleSize", arity = "1", description = "Desired percentage of the sample between (0, 1)", defaultValue = "0.25")
+	@Parameters(paramLabel = "sampleSize", arity = "1", description = "Desired percentage of the sample between (0, 1)", defaultValue = "1")
 	private double sampleSize;
 
-	@Option(names = "--population", required = true, description = "Population xml file")
+	@Option(names = "--population", required = true, description = "Population xml file",defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\trafficAssignment/output_plans.xml.gz")
 	private Path population;
 
-	@Option(names = "--output", description = "Output folder", defaultValue = "output/scenario")
+	@Option(names = "--output", description = "Output folder", defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\episim")
 	private Path output;
 
-	@Option(names = "--events", required = true, description = "Path to events file")
+	@Option(names = "--events", required = true, description = "Path to events file",defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\trafficAssignment/output_events.xml.gz")
 	private List<Path> eventFiles;
 
 	@Option(names = "--facilities", description = "Path to facility file")
@@ -99,7 +99,28 @@ public class DownSampleScenario implements Callable<Integer> {
 		Population population = PopulationUtils.readPopulation(this.population.toString());
 		PopulationUtils.sampleDown(population, sampleSize);
 
-		PopulationUtils.writePopulation(population, output.resolve("population" + sampleSize + ".xml.gz").toString());
+
+		/*Population population2 = PopulationUtils.readPopulation("F:\\models\\mitoMunich\\input\\trafficAssignment\\pt/matsimPlans.xml.gz");
+		List<Id<Person>> populationPtList = new ArrayList<>();
+		MainModeIdentifierImpl mainModeIdentifier = new MainModeIdentifierImpl();
+		for (Person pp : population2.getPersons().values()) {
+			String mode = mainModeIdentifier.identifyMainMode(TripStructureUtils.getLegs(pp.getSelectedPlan()));
+			if (mode.equals("pt")) {
+				populationPtList.add(pp.getId());
+			}
+		}
+
+		log.warn("Total number of pt agents: "+populationPtList.size() + "|all agents: "+population.getPersons().size());
+
+		Population populationNew = PopulationUtils.createPopulation(ConfigUtils.createConfig());
+
+		for(Id<Person> id: populationPtList){
+			populationNew.addPerson(population.getPersons().get(id));
+		}
+
+		population=populationNew;
+
+		PopulationUtils.writePopulation(population, output.resolve("populationPt" + sampleSize + ".xml.gz").toString());*/
 
 		if (!eventFiles.stream().allMatch(Files::exists)) {
 			log.error("Event files {} do not exists", eventFiles);

@@ -32,6 +32,7 @@ import org.matsim.episim.events.EpisimPersonStatusEvent;
 import org.matsim.episim.events.EpisimPotentialInfectionEvent;
 import org.matsim.episim.model.VaccinationType;
 import org.matsim.episim.model.VirusStrain;
+import org.matsim.episim.munich.SiloPerson;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.utils.objectattributes.attributable.Attributable;
 import org.matsim.utils.objectattributes.attributable.Attributes;
@@ -209,6 +210,7 @@ public final class EpisimPerson implements Attributable {
 	 */
 	private double susceptibility = 1;
 
+	private SiloPerson siloPerson;
 	/**
 	 * Lookup age from attributes.
 	 */
@@ -877,6 +879,14 @@ public final class EpisimPerson implements Attributable {
 			return trajectory.get(idx + 1);
 
 		return null;
+	}
+
+	public SiloPerson getSiloPerson() {
+		return siloPerson;
+	}
+
+	public void setSiloPerson(SiloPerson siloPerson) {
+		this.siloPerson = siloPerson;
 	}
 
 	/**
