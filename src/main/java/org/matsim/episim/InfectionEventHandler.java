@@ -44,6 +44,7 @@ import org.matsim.episim.model.*;
 import org.matsim.episim.model.activity.ActivityParticipationModel;
 import org.matsim.episim.model.testing.TestingModel;
 import org.matsim.episim.model.vaccination.VaccinationModel;
+import org.matsim.episim.munich.MatsimId2SiloPersonConverter;
 import org.matsim.episim.munich.SiloPerson;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.policy.ShutdownPolicy;
@@ -309,7 +310,18 @@ public final class InfectionEventHandler implements Externalizable {
 				// Add all person and facilities
 				if (event instanceof HasPersonId) {
 					person = this.personMap.computeIfAbsent(((HasPersonId) event).getPersonId(), this::createPerson);
-					int siloPersonId = Integer.parseInt(person.getPersonId().toString());
+					/*int siloPersonId = Integer.parseInt(person.getPersonId().toString());
+					SiloPerson siloPerson = this.siloPersonMap.get(siloPersonId);
+
+					if (siloPerson==null){
+						siloPerson = new SiloPerson(siloPersonId);
+						siloPersonMap.put(siloPersonId, siloPerson);
+					}
+
+					person.setSiloPerson(siloPerson);
+*/
+					int tripId = Integer.parseInt(person.getPersonId().toString());
+					int siloPersonId = MatsimId2SiloPersonConverter.tripId2PersonId.get(tripId);
 					SiloPerson siloPerson = this.siloPersonMap.get(siloPersonId);
 
 					if (siloPerson==null){
@@ -738,9 +750,23 @@ public final class InfectionEventHandler implements Externalizable {
 		progressionModel.setIteration(iteration);
 		progressionModel.beforeStateUpdates(personMap, iteration, this.report);
 
-		for (EpisimPerson person : personMap.values()) {
-			progressionModel.updateState(person, iteration);
+		for(SiloPerson siloPerson : siloPersonMap.values()){
+			if(siloPerson.getEpisimPersonList()==null){
+				log.warn(siloPerson.getId() + " Silo Person has no episim person");
+				continue;
+			}
+			progressionModel.updateState(siloPerson.getEpisimPersonList().get(0), iteration);
+			for(int index = 1; index < siloPerson.getEpisimPersonList().size();index++){
+				siloPerson.getEpisimPersonList().get(index).setQuarantineStatus(siloPerson.getEpisimPersonList().get(0).getQuarantineStatus(),iteration);
+				siloPerson.getEpisimPersonList().get(index).setTestStatus(siloPerson.getEpisimPersonList().get(0).getTestStatus(),iteration-1);
+				siloPerson.getEpisimPersonList().get(index).setDiseaseStatus(now, siloPerson.getEpisimPersonList().get(0).getDiseaseStatus());
+			}
 		}
+
+		/*for (EpisimPerson person : personMap.values()) {
+			progressionModel.updateState(person, iteration);
+		}*/
+
 		reporting.reportCpuTime(iteration, "ProgressionModelParallel", "start", -2);
 		progressionModel.afterStateUpdates(personMap, iteration);
 		reporting.reportCpuTime(iteration, "ProgressionModelParallel", "finished", -2);
@@ -761,7 +787,7 @@ public final class InfectionEventHandler implements Externalizable {
 		reporting.reportCpuTime(iteration, "HandleInfections", "finished", -1);
 
 		reporting.reportCpuTime(iteration, "Reporting", "start", -1);
-		Map<String, EpisimReporting.InfectionReport> reports = reporting.createReports(personMap.values(), iteration);
+		Map<String, EpisimReporting.InfectionReport> reports = reporting.createReports(personMap.values(), siloPersonMap.values(), iteration);
 		this.report = reports.get("total");
 
 		reporting.reporting(reports, iteration, report.date);
@@ -919,8 +945,9 @@ public final class InfectionEventHandler implements Externalizable {
 		// store the infections for a day
 		List<Event> infections = new ArrayList<>();
 
+
 		// "execute" collected infections
-		for (EpisimPerson person : personMap.values()) {
+		/*for (EpisimPerson person : personMap.values()) {
 			EpisimInfectionEvent e;
 			if ((e = person.checkInfection()) != null)
 				infections.add(e);
@@ -930,7 +957,33 @@ public final class InfectionEventHandler implements Externalizable {
 				person.getPotentialInfections().clear();
 			}
 
+		}*/
+
+		//modify
+		for(SiloPerson siloPerson : siloPersonMap.values()){
+			EpisimInfectionEvent e = null;
+			for(EpisimPerson person : siloPerson.getEpisimPersonList()){
+				if (e==null & person.getEarliestInfection()!=null){
+					e = person.getEarliestInfection();
+					continue;
+				}
+
+				if(person.getEarliestInfection()!=null){
+					if(person.getEarliestInfection().getTime()<e.getTime()){
+						e = person.getEarliestInfection();
+					}
+				}
+			}
+
+			if(e!=null){
+				infections.add(e);
+				for(EpisimPerson person : siloPerson.getEpisimPersonList()){
+					person.setInfection(e);
+				}
+			}
+
 		}
+
 
 		// report infections in order
 		infections.stream().sorted()

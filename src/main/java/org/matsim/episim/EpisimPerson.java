@@ -113,6 +113,10 @@ public final class EpisimPerson implements Attributable {
 	 */
 	private BitSet activityParticipation;
 
+	public EpisimInfectionEvent getEarliestInfection() {
+		return earliestInfection;
+	}
+
 	/**
 	 * In the parallel version of the {@link ReplayHandler}, the infections
 	 * are not happen in a chronically order. The earliestInfections
@@ -418,6 +422,17 @@ public final class EpisimPerson implements Attributable {
 		}
 
 		return null;
+	}
+
+	public void setInfection(EpisimInfectionEvent e) {
+
+		EpisimInfectionEvent event = e;
+		setDiseaseStatus(event.getTime(), EpisimPerson.DiseaseStatus.infectedButNotContagious);
+		setVirusStrain(event.getVirusStrain());
+		infectionContainer = (Id<ActivityFacility>) event.getContainerId();
+		setInfectionType(event.getInfectionType());
+		numInfections++;
+		this.earliestInfection = null;
 	}
 
 	/**

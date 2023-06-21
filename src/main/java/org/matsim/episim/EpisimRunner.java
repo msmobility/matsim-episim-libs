@@ -34,6 +34,7 @@ import org.matsim.core.controler.ControlerUtils;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.episim.model.ProgressionModel;
 import org.matsim.episim.munich.MatsimId2SiloPersonConverter;
+import org.matsim.episim.munich.SiloPerson;
 import org.matsim.episim.munich.SocialNetworkReader;
 
 import java.io.Externalizable;
@@ -121,6 +122,11 @@ public final class EpisimRunner {
 		//initial social network of episim person
 		SocialNetworkReader socialNetworkReader = new SocialNetworkReader(handler.getSiloPersonMap());
 		socialNetworkReader.read();
+
+		for(EpisimPerson episimPerson : handler.getPersons()){
+			int siloPersonId = MatsimId2SiloPersonConverter.tripId2PersonId.get(Integer.parseInt(episimPerson.getPersonId().toString()));
+			handler.getSiloPersonMap().get(siloPersonId).getEpisimPersonList().add(episimPerson);
+		}
 
 		reporting.reportCpuTime(0, "Init", "finished", -1);
 

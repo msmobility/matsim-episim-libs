@@ -62,13 +62,13 @@ public class DownSampleScenario implements Callable<Integer> {
 	@Parameters(paramLabel = "sampleSize", arity = "1", description = "Desired percentage of the sample between (0, 1)", defaultValue = "1")
 	private double sampleSize;
 
-	@Option(names = "--population", required = true, description = "Population xml file",defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\trafficAssignment/output_plans.xml.gz")
+	@Option(names = "--population", required = true, description = "Population xml file",defaultValue = "F:\\models\\tengos_episim\\input\\wctr\\mito_sn/output_plans.xml.gz")
 	private Path population;
 
-	@Option(names = "--output", description = "Output folder", defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\episim")
+	@Option(names = "--output", description = "Output folder", defaultValue = "F:\\models\\tengos_episim\\input\\wctr\\mito_sn")
 	private Path output;
 
-	@Option(names = "--events", required = true, description = "Path to events file",defaultValue = "F:\\models\\mitoMunich\\scenOutput\\\\mito2.0_sn_base\\2011\\trafficAssignment/output_events.xml.gz")
+	@Option(names = "--events", required = true, description = "Path to events file",defaultValue = "F:\\models\\tengos_episim\\input\\wctr\\mito_sn/output_events.xml.gz")
 	private List<Path> eventFiles;
 
 	@Option(names = "--facilities", description = "Path to facility file")

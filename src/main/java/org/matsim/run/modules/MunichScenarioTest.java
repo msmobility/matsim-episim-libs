@@ -29,6 +29,8 @@ import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.Restriction;
 
+import java.time.DayOfWeek;
+
 /**
  * Scenario based on the publicly available OpenBerlin scenario (https://github.com/matsim-scenarios/matsim-berlin).
  */
@@ -75,6 +77,13 @@ public class MunichScenarioTest extends AbstractModule {
 		config.getOrAddContainerParams("home").setContactIntensity(1.).setSpacesPerFacility(1.);
 		config.getOrAddContainerParams("quarantine_home").setContactIntensity(1.).setSpacesPerFacility(1.);
 	}
+
+	public static String mitoTripFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/trips.csv";
+	public static String egoAlterHouseholdFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/egoAlterHousehold5pct.csv";
+	public static String egoAlterJobFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/egoAlterJob5pct.csv";
+	public static String egoAlterNursingHomeFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/egoAlterNursingHome5pct.csv";
+	public static String egoAlterSchoolFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/egoAlterSchool5pct.csv";
+	public static String egoAlterDwellingFilePath = "F:\\models\\tengos_episim\\input\\mito_coordinated/egoAlterDwelling5pct.csv";
 	@Provides
 	@Singleton
 	public Config config() {
@@ -82,11 +91,16 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.controler().setOutputDirectory("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\episim_sn_joint");
+		config.controler().setOutputDirectory("F:\\models\\tengos_episim\\scenOutput\\test");
 		//config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
-		episimConfig.setInputEventsFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\episim_sn_joint/output_events-1.0_converted_addFakeActivities.xml.gz");
-		config.network().setInputFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\2011\\trafficAssignment/output_network.xml.gz");
-		//config.plans().setInputFile("F:\\models\\mitoMunich\\scenOutput\\mito2.0_sn_algorithm3_0.51_withAssignment\\2011\\trafficAssignment/output_plans.xml.gz");
+		episimConfig.setInputEventsFile("F:\\models\\tengos_episim\\input\\mito_coordinated/output_events-1.0.xml.gz");
+
+		//If add event files for different day of week
+		//episimConfig.addInputEventsFile("be_2020-week_snz_episim_events_wt_%dpt_split.xml.gz")
+		//		.addDays(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+
+		config.network().setInputFile("F:\\models\\tengos_episim\\input\\mito_coordinated/output_network.xml.gz");
+
 		episimConfig.setFacilitiesHandling(EpisimConfigGroup.FacilitiesHandling.bln);//snz: run with facility file
 		episimConfig.setInitialInfections(500);
 		//episimConfig.setInitialInfectionDistrict("Munich");

@@ -41,6 +41,7 @@ import org.matsim.episim.EpisimPerson.VaccinationStatus;
 import org.matsim.episim.events.*;
 import org.matsim.episim.model.VaccinationType;
 import org.matsim.episim.model.VirusStrain;
+import org.matsim.episim.munich.SiloPerson;
 import org.matsim.episim.policy.Restriction;
 import org.matsim.episim.reporting.EpisimWriter;
 
@@ -284,7 +285,7 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 	/**
 	 * Creates infections reports for the day. Grouped by district, but always containing a "total" entry.
 	 */
-	Map<String, InfectionReport> createReports(Collection<EpisimPerson> persons, int iteration) {
+	Map<String, InfectionReport> createReports(Collection<EpisimPerson> persons, Collection<SiloPerson> siloPersons, int iteration) {
 
 		Map<String, InfectionReport> reports = new LinkedHashMap<>();
 
@@ -294,7 +295,8 @@ public final class EpisimReporting implements BasicEventHandler, Closeable, Exte
 		InfectionReport report = new InfectionReport("total", time, date, iteration);
 		reports.put("total", report);
 
-		for (EpisimPerson person : persons) {
+		for (SiloPerson siloPerson : siloPersons) {
+			EpisimPerson person = siloPerson.getEpisimPersonList().get(0);
 			String districtName = (String) person.getAttributes().getAttribute("district");
 
 			boolean isVaccinated = isVaccinated(person);
