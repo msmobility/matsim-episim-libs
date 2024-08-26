@@ -6,7 +6,6 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.BatchRun;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.TracingConfigGroup;
-import org.matsim.episim.BatchRun.Parameter;
 import org.matsim.episim.model.FaceMask;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.Restriction;

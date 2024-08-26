@@ -311,7 +311,7 @@ final class TrajectoryHandler {
 
 		reporting.handleEvent(leavesVehicleEvent);
 
-		if (episimConfig.getContagiousOptimization() == EpisimConfigGroup.ContagiousOptimization.no || 
+		if (episimConfig.getContagiousOptimization() == EpisimConfigGroup.ContagiousOptimization.no ||
 			episimVehicle.containsContagious()) {
 			contactModel.infectionDynamicsVehicle(episimPerson, episimVehicle, now);
 		}

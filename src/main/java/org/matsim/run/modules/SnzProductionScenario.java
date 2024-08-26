@@ -17,7 +17,6 @@ import org.matsim.episim.model.*;
 import org.matsim.episim.model.vaccination.VaccinationByAge;
 import org.matsim.episim.model.vaccination.VaccinationModel;
 import org.matsim.episim.policy.FixedPolicy;
-import org.matsim.run.batch.CologneOmicron.Params;
 import org.matsim.vehicles.VehicleType;
 
 import javax.inject.Singleton;
@@ -638,7 +637,7 @@ public abstract class SnzProductionScenario extends AbstractModule {
 			return this;
 		}
 	}
-	
+
 
 	/**
 	 * Adds progression config to the given builder.

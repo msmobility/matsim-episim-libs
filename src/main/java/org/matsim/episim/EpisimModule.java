@@ -63,6 +63,7 @@ public class EpisimModule extends AbstractModule {
 		// Main model classes regarding progression / infection etc..
 		bind(ContactModel.class).to(DefaultContactModel.class).in(Singleton.class);
 		bind(InfectionModel.class).to(DefaultInfectionModel.class).in(Singleton.class);
+		//bind(InfectionModel.class).to(InfectionModelWithSeasonality.class).in(Singleton.class);
 		bind(ProgressionModel.class).to(ConfigurableProgressionModel.class).in(Singleton.class);
 		bind(DiseaseStatusTransitionModel.class).to(DefaultDiseaseStatusTransitionModel.class).in(Singleton.class);
 		bind(FaceMaskModel.class).to(DefaultFaceMaskModel.class).in(Singleton.class);

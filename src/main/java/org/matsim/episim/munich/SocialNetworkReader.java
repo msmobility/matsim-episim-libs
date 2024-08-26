@@ -24,24 +24,28 @@ public class SocialNetworkReader extends AbstractCsvReader {
 	}
 
 	public void read() {
-		logger.info("  Reading ego-alter household data from csv file");
-		Path filePath = Paths.get(MunichScenarioTest.egoAlterHouseholdFilePath);
-		super.read(filePath, ",");
-		logger.info(countError + " Egos are not existed in the trip person map.");
-		logger.info("  Reading ego-alter job data from csv file");
-		filePath = Paths.get(MunichScenarioTest.egoAlterJobFilePath);
-		super.read(filePath, ",");
-		logger.info(countError + " Egos are not existed in the trip person map.");
-		logger.info("  Reading ego-alter nursing home data from csv file");
-		filePath = Paths.get(MunichScenarioTest.egoAlterNursingHomeFilePath);
-		super.read(filePath, ",");
-		logger.info(countError + " Egos are not existed in the trip person map.");
-		logger.info("  Reading ego-alter school data from csv file");
-		filePath = Paths.get(MunichScenarioTest.egoAlterSchoolFilePath);
-		super.read(filePath, ",");
-		logger.info(countError + " Egos are not existed in the trip person map.");
-		logger.info("  Reading ego-alter dwelling data from csv filemum");
-		filePath = Paths.get(MunichScenarioTest.egoAlterDwellingFilePath);
+//		logger.info("  Reading ego-alter household data from csv file");
+//		Path filePath = Paths.get(MunichScenarioTest.egoAlterHouseholdFilePath);
+//		super.read(filePath, ",");
+//		logger.info(countError + " Egos are not existed in the trip person map.");
+//		logger.info("  Reading ego-alter job data from csv file");
+//		filePath = Paths.get(MunichScenarioTest.egoAlterJobFilePath);
+//		super.read(filePath, ",");
+//		logger.info(countError + " Egos are not existed in the trip person map.");
+//		logger.info("  Reading ego-alter nursing home data from csv file");
+//		filePath = Paths.get(MunichScenarioTest.egoAlterNursingHomeFilePath);
+//		super.read(filePath, ",");
+//		logger.info(countError + " Egos are not existed in the trip person map.");
+//		logger.info("  Reading ego-alter school data from csv file");
+//		filePath = Paths.get(MunichScenarioTest.egoAlterSchoolFilePath);
+//		super.read(filePath, ",");
+//		logger.info(countError + " Egos are not existed in the trip person map.");
+//		logger.info("  Reading ego-alter dwelling data from csv filemum");
+//		filePath = Paths.get(MunichScenarioTest.egoAlterDwellingFilePath);
+//		super.read(filePath, ",");
+//		logger.info(countError + " Egos are not existed in the trip person map.");
+		logger.info("  Reading ego-alter friend data from csv file");
+		Path filePath = Paths.get("C:\\models\\tengos_episim\\input\\egoAlterFriends5pct.csv");
 		super.read(filePath, ",");
 		logger.info(countError + " Egos are not existed in the trip person map.");
 	}

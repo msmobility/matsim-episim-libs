@@ -38,11 +38,11 @@ public class EpisimVaccinationEvent extends Event implements HasPersonId {
 	public Id<Person> getPersonId() {
 		return personId;
 	}
-	
+
 	public VaccinationType getVaccinationType() {
 		return type;
 	}
-	
+
 	public boolean getReVaccination() {
 		return reVaccination;
 	}

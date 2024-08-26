@@ -33,12 +33,12 @@ import static tech.tablesaw.api.ColumnType.*;
  */
 public class VaccinationFromData extends VaccinationByAge {
 
-	private static final Logger log = LogManager.getLogger(org.matsim.episim.model.vaccination.VaccinationFromData.class);
+	private static final Logger log = LogManager.getLogger(VaccinationFromData.class);
 
 	/**
 	 * All known age groups.
 	 */
-	private List<org.matsim.episim.model.vaccination.VaccinationFromData.AgeGroup> ageGroups = null;
+	private List<VaccinationFromData.AgeGroup> ageGroups = null;
 
 	/**
 	 * Entries for each day.
@@ -61,7 +61,7 @@ public class VaccinationFromData extends VaccinationByAge {
 	private final RandomVaccination random;
 
 	@Inject
-	public VaccinationFromData(SplittableRandom rnd, VaccinationConfigGroup vaccinationConfig, org.matsim.episim.model.vaccination.VaccinationFromData.Config config) {
+	public VaccinationFromData(SplittableRandom rnd, VaccinationConfigGroup vaccinationConfig, VaccinationFromData.Config config) {
 		super(rnd, vaccinationConfig);
 		this.config = config;
 		this.random = new RandomVaccination(rnd, vaccinationConfig);
@@ -186,7 +186,7 @@ public class VaccinationFromData extends VaccinationByAge {
 
 		for (int ii = 0; ii < ageGroups.size(); ii++) {
 
-			org.matsim.episim.model.vaccination.VaccinationFromData.AgeGroup ag = ageGroups.get(ii);
+			VaccinationFromData.AgeGroup ag = ageGroups.get(ii);
 			double share = entry.getDouble(ii);
 
 			int vaccinationsLeft = (int) ((ag.size * share) - ag.vaccinated);

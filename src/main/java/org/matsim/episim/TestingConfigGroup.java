@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ReflectiveConfigGroup;
+import org.matsim.episim.model.ProgressionModel;
 import org.matsim.episim.model.testing.TestType;
 
 import java.time.DayOfWeek;
@@ -14,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Config option specific to testing and measures performed in {@link org.matsim.episim.model.ProgressionModel}.
+ * Config option specific to testing and measures performed in {@link ProgressionModel}.
  */
 public class TestingConfigGroup extends ReflectiveConfigGroup {
 

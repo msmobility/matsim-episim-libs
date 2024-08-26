@@ -15,6 +15,7 @@ import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.TracingConfigGroup;
 import org.matsim.episim.VaccinationConfigGroup;
 import org.matsim.episim.model.*;
+
 import org.matsim.episim.model.progression.AgeDependentDiseaseStatusTransitionModel;
 import org.matsim.episim.model.progression.DiseaseStatusTransitionModel;
 import org.matsim.episim.policy.FixedPolicy;

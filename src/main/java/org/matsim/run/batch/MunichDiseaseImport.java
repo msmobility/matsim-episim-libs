@@ -13,7 +13,6 @@ import org.matsim.episim.model.AgeDependentInfectionModelWithSeasonality;
 import org.matsim.episim.model.ContactModel;
 import org.matsim.episim.model.InfectionModel;
 import org.matsim.episim.model.OldSymmetricContactModel;
-import org.matsim.episim.model.ProgressionModel;
 import org.matsim.episim.model.progression.AgeDependentDiseaseStatusTransitionModel;
 import org.matsim.episim.model.progression.DiseaseStatusTransitionModel;
 import org.matsim.episim.policy.FixedPolicy;

@@ -1,8 +1,5 @@
 package org.matsim.episim.analysis;
 
-import org.apache.commons.collections.map.TransformedSortedMap;
-import org.matsim.core.router.Transit;
-import org.matsim.episim.TracingConfigGroup;
 import org.matsim.episim.model.Transition;
 import tech.tablesaw.api.DoubleColumn;
 import tech.tablesaw.columns.Column;
@@ -13,11 +10,7 @@ import tech.tablesaw.plotly.traces.Trace;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-
-import static java.nio.file.Files.createFile;
 
 class KNTestLognormal{
 

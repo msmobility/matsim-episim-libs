@@ -31,7 +31,6 @@ import org.matsim.episim.model.Transition;
 import org.matsim.episim.model.input.RestrictionInput;
 import org.matsim.episim.model.input.CreateAdjustedRestrictionsFromCSV;
 import org.matsim.episim.model.input.CreateRestrictionsFromCSV;
-import org.matsim.episim.model.input.RestrictionInput;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;
 import org.matsim.episim.policy.Restriction;

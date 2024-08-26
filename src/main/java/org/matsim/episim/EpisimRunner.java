@@ -34,7 +34,6 @@ import org.matsim.core.controler.ControlerUtils;
 import org.matsim.core.gbl.Gbl;
 import org.matsim.episim.model.ProgressionModel;
 import org.matsim.episim.munich.MatsimId2SiloPersonConverter;
-import org.matsim.episim.munich.SiloPerson;
 import org.matsim.episim.munich.SocialNetworkReader;
 
 import java.io.Externalizable;
@@ -47,8 +46,6 @@ import java.nio.file.StandardCopyOption;
 import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Main entry point and runner of one epidemic simulation.

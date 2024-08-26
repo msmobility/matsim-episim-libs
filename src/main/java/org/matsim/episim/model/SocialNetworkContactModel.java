@@ -182,7 +182,7 @@ public final class SocialNetworkContactModel extends AbstractContactModel {
 				reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer);
 			}
 
-			if (!AbstractContactModel.personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
+			if (!personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
 				continue;
 			}
 
@@ -295,7 +295,7 @@ public final class SocialNetworkContactModel extends AbstractContactModel {
 					reporting.reportContact(now, personLeavingContainer, contactPerson, container, infectionType, jointTimeInContainer);
 				}
 
-				if (!AbstractContactModel.personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
+				if (!personsCanInfectEachOther(personLeavingContainer, contactPerson)) {
 					continue;
 				}
 

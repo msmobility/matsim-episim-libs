@@ -28,7 +28,6 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 /**
  * This is a runnable class that is used to write all contact events between persons.

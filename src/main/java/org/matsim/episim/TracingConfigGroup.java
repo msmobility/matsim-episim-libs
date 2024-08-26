@@ -3,6 +3,7 @@ package org.matsim.episim;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import org.matsim.core.config.ReflectiveConfigGroup;
+import org.matsim.episim.model.ProgressionModel;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Config option specific to contact tracing and measures performed in {@link org.matsim.episim.model.ProgressionModel}.
+ * Config option specific to contact tracing and measures performed in {@link ProgressionModel}.
  */
 public class TracingConfigGroup extends ReflectiveConfigGroup {
 

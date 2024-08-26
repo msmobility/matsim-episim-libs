@@ -7,7 +7,7 @@ import org.matsim.episim.BatchRun;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.EpisimConfigGroup.InfectionParams;
 import org.matsim.episim.TracingConfigGroup;
-import org.matsim.episim.model.*;
+import org.matsim.episim.model.FaceMask;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;
 import org.matsim.episim.policy.Restriction;
@@ -45,9 +45,9 @@ public class BerlinContactModelsAndInterventions implements BatchRun<BerlinConta
 	public Config prepareConfig(int id, Params params) {
 
 		int nSpaces = 1;
-		
-		if (params.contactModel.equals(SYMMETRIC_NEW_NSPACES_20)) nSpaces = 20; 
-		
+
+		if (params.contactModel.equals(SYMMETRIC_NEW_NSPACES_20)) nSpaces = 20;
+
 		boolean withModifiedCi = !params.contactModel.equals(OLD);
 
 		SnzBerlinWeekScenario2020 module = new SnzBerlinWeekScenario2020(25, false, withModifiedCi, MODELS.get(params.contactModel));
@@ -73,7 +73,7 @@ public class BerlinContactModelsAndInterventions implements BatchRun<BerlinConta
 
 			else if (params.restriction.equals("0.9CLOTH@PT&SHOP"))
 				builder.restrict(20, Restriction.ofMask(FaceMask.CLOTH, 0.9), "pt", "shop_daily", "shop_other");
-			
+
 			else if (params.restriction.equals("0.9CLOTH@EDU"))
 				builder.restrict(20, Restriction.ofMask(FaceMask.CLOTH, 0.9), "educ_primary", "educ_kiga", "educ_secondary", "educ_higher", "educ_tertiary", "educ_other");
 
@@ -85,16 +85,16 @@ public class BerlinContactModelsAndInterventions implements BatchRun<BerlinConta
 
 			else if (params.restriction.equals("shop50")) builder.restrict(20, 0.5, "shop_daily", "shop_other");
 			else if (params.restriction.equals("shop0")) builder.restrict(20, 0., "shop_daily", "shop_other");
-			
+
 			else if (params.restriction.equals("educ_kiga50")) builder.restrict(20, 0.5, "educ_kiga");
 			else if (params.restriction.equals("educ_kiga0")) builder.restrict(20, 0., "educ_kiga");
 
 			else if (params.restriction.equals("educ_school50"))
 				builder.restrict(20, 0.5, "educ_primary", "educ_secondary", "educ_tertiary");
-			
+
 			else if (params.restriction.equals("educ_school0"))
 				builder.restrict(20, 0., "educ_primary", "educ_secondary", "educ_tertiary");
-			
+
 			else if (params.restriction.equals("educ_higher50")) builder.restrict(20, 0.5, "educ_higher");
 			else if (params.restriction.equals("educ_higher0")) builder.restrict(20, 0., "educ_higher");
 
@@ -108,7 +108,7 @@ public class BerlinContactModelsAndInterventions implements BatchRun<BerlinConta
 						episimConfig.getStartDate().plusDays(20), Integer.MAX_VALUE)
 				);
 				tracingConfig.setTracingProbability(0.75);
-			} 
+			}
 			else throw new RuntimeException("Measure not implemented: " + params.restriction);
 		}
 

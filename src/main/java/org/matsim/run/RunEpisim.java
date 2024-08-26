@@ -39,7 +39,6 @@ import org.matsim.episim.EpisimModule;
 import org.matsim.episim.EpisimRunner;
 import org.matsim.run.modules.MunichScenarioTest;
 import org.matsim.run.modules.OpenBerlinScenario;
-import org.matsim.run.modules.OpenBerlinScenarioWithFacility;
 import picocli.CommandLine;
 
 import java.lang.reflect.Constructor;
@@ -226,7 +225,7 @@ public final class RunEpisim implements Callable<Integer> {
 		}
 
 		if (modules.isEmpty()) {
-			log.info("Using default OpenBerlinScenario");
+			log.info("Using default MunichScenarioTest");
 			modules.add(new MunichScenarioTest());
 			//modules.add(new OpenBerlinScenarioWithFacility());
 		}

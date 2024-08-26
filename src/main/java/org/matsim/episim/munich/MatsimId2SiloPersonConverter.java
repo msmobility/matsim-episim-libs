@@ -41,8 +41,14 @@ public class MatsimId2SiloPersonConverter extends AbstractCsvReader {
 	@Override
 	public void processHeader(String[] header) {
 		List<String> headerList = Arrays.asList(header);
+
+		//if using trip file from MITO
 		posTripId = headerList.indexOf("id");
 		posSiloPersonId = headerList.indexOf("person");
+
+		//if using trip file MITO7
+		/*posTripId = headerList.indexOf("t.id");
+		posSiloPersonId = headerList.indexOf("p.ID");*/
 	}
 
 	@Override

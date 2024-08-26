@@ -6,14 +6,9 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.BatchRun;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.EpisimUtils;
-import org.matsim.episim.TestingConfigGroup;
-import org.matsim.episim.VaccinationConfigGroup;
-import org.matsim.episim.VirusStrainConfigGroup;
-import org.matsim.episim.model.FaceMask;
 import org.matsim.episim.model.VirusStrain;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;
-import org.matsim.episim.policy.Restriction;
 import org.matsim.run.RunParallel;
 import org.matsim.run.modules.AbstractSnzScenario2020;
 import org.matsim.run.modules.SnzBerlinProductionScenario;
@@ -23,12 +18,9 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
 
 
 /**

@@ -56,7 +56,9 @@ public class RandomInitialInfections implements InitialInfectionHandler {
 		for (Map.Entry<VirusStrain, NavigableMap<LocalDate, Integer>> e : episimConfig.getInfections_pers_per_day().entrySet()) {
 
 			int numInfections = EpisimUtils.findValidEntry(e.getValue(), 1, date);
-
+			if(date.isEqual(LocalDate.of(2020,5,17) )){
+				System.out.println(numInfections);
+			}
 			List<EpisimPerson> candidates = persons.values().stream()
 					.filter(p -> district == null || district.equals(p.getAttributes().getAttribute("district")))
 					.filter(p -> lowerAgeBoundaryForInitInfections == -1 || (int) p.getAttributes().getAttribute("microm:modeled:age") >= lowerAgeBoundaryForInitInfections)

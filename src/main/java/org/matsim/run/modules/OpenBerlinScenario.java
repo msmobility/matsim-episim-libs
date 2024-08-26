@@ -89,18 +89,18 @@ public class OpenBerlinScenario extends AbstractModule {
 		episimConfig.setStartDate(startDate);
 		episimConfig.setHospitalFactor(1.6);
 
-		//long closingIteration = 14;
+		long closingIteration = 14;
 
 		addDefaultParams(episimConfig);
 
-		/*episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
+		episimConfig.setPolicy(FixedPolicy.class, FixedPolicy.config()
 				.restrict(closingIteration, Restriction.of(0.0), "leisure", "edu")
 				.restrict(closingIteration, Restriction.of(0.2), "work", "business", "other")
 				.restrict(closingIteration, Restriction.of(0.3), "shop", "errands")
 				.restrict(closingIteration, Restriction.of(0.5), "pt")
 				.restrict(closingIteration + 60, Restriction.of(1.0), DEFAULT_ACTIVITIES)
 				.build()
-		);*/
+		);
 
 		return config;
 	}

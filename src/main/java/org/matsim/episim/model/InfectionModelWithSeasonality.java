@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.SplittableRandom;
 
-import static org.matsim.episim.model.DefaultInfectionModel.*;
-
 /**
  * Extension of the {@link DefaultInfectionModel} with a seasonality component.
  */
@@ -57,10 +55,10 @@ public final class InfectionModelWithSeasonality implements InfectionModel {
 		// exp( - 1 * 1 * 100 ) \approx 0, and thus the infection proba becomes 1.  Which also means that changes in contactIntensity has
 		// no effect.  kai, mar'20
 		VirusStrainConfigGroup.StrainParams strain = virusStrainConfig.getParams(infector.getVirusStrain());
-		double susceptibility = Math.min(getVaccinationEffectiveness(strain, target, vaccinationConfig, iteration), getImmunityEffectiveness(strain, target, vaccinationConfig, iteration));
+		double susceptibility = Math.min(DefaultInfectionModel.getVaccinationEffectiveness(strain, target, vaccinationConfig, iteration), DefaultInfectionModel.getImmunityEffectiveness(strain, target, vaccinationConfig, iteration));
 
 		return 1 - Math.exp(-episimConfig.getCalibrationParameter() * contactIntensity * jointTimeInContainer * ciCorrection
-				* getVaccinationInfectivity(infector, strain, vaccinationConfig, iteration)
+				* DefaultInfectionModel.getVaccinationInfectivity(infector, strain, vaccinationConfig, iteration)
 				* target.getSusceptibility()
 				* susceptibility
 				* strain.getInfectiousness()

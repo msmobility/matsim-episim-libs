@@ -6,7 +6,6 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.BatchRun;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.VirusStrainConfigGroup;
-import org.matsim.episim.BatchRun.Parameter;
 import org.matsim.episim.model.VirusStrain;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;

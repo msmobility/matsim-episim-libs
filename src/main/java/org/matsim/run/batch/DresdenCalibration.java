@@ -4,20 +4,10 @@ import com.google.inject.AbstractModule;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.*;
-import org.matsim.episim.model.VirusStrain;
-import org.matsim.episim.policy.FixedPolicy;
-import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;
-import org.matsim.episim.policy.Restriction;
 import org.matsim.run.RunParallel;
-import org.matsim.run.modules.SnzBerlinProductionScenario;
 import org.matsim.run.modules.SnzDresdenScenario;
 
 import javax.annotation.Nullable;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**

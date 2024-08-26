@@ -8,7 +8,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Config option specific to {@link org.matsim.episim.model.VirusStrain}.
+ * Config option specific to {@link VirusStrain}.
  */
 public class VirusStrainConfigGroup extends ReflectiveConfigGroup {
 

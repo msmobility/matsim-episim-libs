@@ -7,16 +7,13 @@ import org.matsim.episim.BatchRun;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.VaccinationConfigGroup;
 import org.matsim.episim.VirusStrainConfigGroup;
-import org.matsim.episim.BatchRun.Parameter;
 import org.matsim.episim.model.FaceMask;
 import org.matsim.episim.model.VaccinationType;
 import org.matsim.episim.model.VirusStrain;
 import org.matsim.episim.policy.AdaptivePolicy;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.Restriction;
-import org.matsim.episim.policy.FixedPolicy.ConfigBuilder;
 import org.matsim.run.RunParallel;
-import org.matsim.run.modules.AbstractSnzScenario2020;
 import org.matsim.run.modules.SnzBerlinProductionScenario;
 
 import javax.annotation.Nullable;
