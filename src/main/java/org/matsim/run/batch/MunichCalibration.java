@@ -50,7 +50,7 @@ public class MunichCalibration implements BatchRun<MunichCalibration.Params> {
 		@GenerateSeeds(2)
 		public long seed;
 
-		@Parameter({0.0000016,0.0000014,0.0000012,0.0000010,0.0000008,0.0000006})
+		@Parameter({0.000_000_6,0.000_000_5,0.000_000_4,0.000_000_3,0.000_000_2,0.000_000_1})
 		double calibrationParam;
 
 /*		@Parameter({1,3,5,7,9,11,13,15,17,19})

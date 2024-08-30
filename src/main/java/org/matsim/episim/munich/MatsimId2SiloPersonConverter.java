@@ -33,8 +33,26 @@ public class MatsimId2SiloPersonConverter extends AbstractCsvReader {
 
 	public void read() {
 		logger.info("  Reading trip-silo person lists from csv file");
-		Path filePath = Paths.get(MunichScenarioTest.mitoTripFilePath);
-		super.read(filePath, ",");
+
+		//if read from one single trip file
+		//Path filePath = Paths.get(MunichScenarioTest.mitoTripFilePath);
+		//super.read(filePath, ",");
+
+		//if read from multiple trip file (case in mito7 currently)
+		List<String> weekdays = Arrays.asList("friday","saturday","sunday");
+		List<String> modes = Arrays.asList("autoDriver", "autoPassenger","bicycle","walk","bus","train","tramOrMetro");
+
+		for (String weekday : weekdays) {
+			for (String mode : modes) {
+				// Construct the filename dynamically
+				String fileName = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_noassignment\\2011\\microData\\trips_" + weekday.toLowerCase() + "_" + mode + ".csv";
+				Path filePath = Paths.get(fileName);
+
+				logger.info("Reading file: " + filePath);
+				super.read(filePath, ",");
+			}
+		}
+
 		logger.info("  Finished " + tripId2PersonId.size());
 	}
 
@@ -43,12 +61,12 @@ public class MatsimId2SiloPersonConverter extends AbstractCsvReader {
 		List<String> headerList = Arrays.asList(header);
 
 		//if using trip file from MITO
-		posTripId = headerList.indexOf("id");
-		posSiloPersonId = headerList.indexOf("person");
+		/*posTripId = headerList.indexOf("id");
+		posSiloPersonId = headerList.indexOf("person");*/
 
 		//if using trip file MITO7
-		/*posTripId = headerList.indexOf("t.id");
-		posSiloPersonId = headerList.indexOf("p.ID");*/
+		posTripId = headerList.indexOf("t.id");
+		posSiloPersonId = headerList.indexOf("p.ID");
 	}
 
 	@Override
