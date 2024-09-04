@@ -21,9 +21,9 @@ public class XMLCombiner {
 	public static void main(String[] args) {
 		try {
 			// Specify the input and output files
-			String file1Path = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\no_pt\\output_events-1.0.xml";
-			String file2Path = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\pt\\output_events-1.0.xml";
-			String outputFilePath = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\output_events-1.0_combined.xml";
+			String file1Path = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\no_pt\\output_events-1.0.xml";
+			String file2Path = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\pt\\output_events-1.0.xml";
+			String outputFilePath = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\output_events-1.0_combined.xml";
 
 			// Load and parse the first XML file
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();

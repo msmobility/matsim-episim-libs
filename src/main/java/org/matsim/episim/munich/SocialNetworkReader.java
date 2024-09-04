@@ -45,9 +45,9 @@ public class SocialNetworkReader extends AbstractCsvReader {
 //		super.read(filePath, ",");
 //		logger.info(countError + " Egos are not existed in the trip person map.");
 		logger.info("  Reading ego-alter friend data from csv file");
-		Path filePath = Paths.get("C:\\models\\tengos_episim\\input\\egoAlterFriends5pct.csv");
+		Path filePath = Paths.get("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\social_network_25pct\\egoAlterFriends25pct_reflected.csv");
 		super.read(filePath, ",");
-		logger.info(countError + " Egos are not existed in the trip person map.");
+		logger.info(countError + " Egos do not exist in the trip person map.");
 	}
 
 	@Override

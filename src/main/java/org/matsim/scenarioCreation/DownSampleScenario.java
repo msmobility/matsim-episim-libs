@@ -62,13 +62,13 @@ public class DownSampleScenario implements Callable<Integer> {
 	@Parameters(paramLabel = "sampleSize", arity = "1", description = "Desired percentage of the sample between (0, 1)", defaultValue = "1")
 	private double sampleSize;
 
-	@Option(names = "--population", required = true, description = "Population xml file",defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\no_pt\\output_plans.xml.gz")
+	@Option(names = "--population", required = true, description = "Population xml file",defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\pt\\output_plans.xml.gz")
 	private Path population;
 
-	@Option(names = "--output", description = "Output folder", defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\no_pt\\")
+	@Option(names = "--output", description = "Output folder", defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\pt\\")
 	private Path output;
 
-	@Option(names = "--events", required = true, description = "Path to events file",defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\no_pt\\output_events.xml.gz")
+	@Option(names = "--events", required = true, description = "Path to events file",defaultValue = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_thursday\\pt\\output_events.xml.gz")
 	private List<Path> eventFiles;
 
 	@Option(names = "--facilities", description = "Path to facility file")

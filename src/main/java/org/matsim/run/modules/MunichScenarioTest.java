@@ -100,7 +100,7 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_saturday_only_test_0.000_000_06\\");
+		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_mon_tues_wed_thur_fri_sat_sun_0.000_000_4\\");
 		//config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
 
 		//if running only one event file for whole week
@@ -108,13 +108,25 @@ public class MunichScenarioTest extends AbstractModule {
 
 		//episimConfig.setInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\IATBR2024\\mito\\clique_destination_15perc_pairThenClique_matsim/output_events-1.0.xml.gz");
 		//If add event files for different day of week
-		episimConfig.addInputEventsFile("C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_friday\\output_events-1.0_combined.xml.gz")
-				.addDays(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_monday.xml.gz")
+				.addDays(DayOfWeek.MONDAY);
 
-		episimConfig.addInputEventsFile("C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_saturday\\output_events-1.0_combined3.xml.gz")
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_tuesday.xml.gz")
+				.addDays(DayOfWeek.TUESDAY);
+
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_wednesday.xml.gz")
+				.addDays(DayOfWeek.WEDNESDAY);
+
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_thursday.xml.gz")
+				.addDays(DayOfWeek.THURSDAY);
+
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_friday.xml.gz")
+				.addDays(DayOfWeek.FRIDAY);
+
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_saturday.xml.gz")
 				.addDays(DayOfWeek.SATURDAY);
 
-		episimConfig.addInputEventsFile("C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_matsim_sunday\\output_events-1.0_combined.xml.gz")
+		episimConfig.addInputEventsFile("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\output_events_for_episim\\output_events_sunday.xml.gz")
 				.addDays(DayOfWeek.SUNDAY);
 
 
@@ -126,7 +138,7 @@ public class MunichScenarioTest extends AbstractModule {
 
 		//episimConfig.setInitialInfectionDistrict("Munich");
 		episimConfig.setSampleSize(1);//100% of the 25% matsim simulation
-		episimConfig.setCalibrationParameter(0.000_000_06);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
+		episimConfig.setCalibrationParameter(0.000_000_4);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
 		episimConfig.setMaxContacts(3);
 		String startDate = "2020-02-16";
 		episimConfig.setStartDate(startDate);
@@ -223,34 +235,45 @@ public class MunichScenarioTest extends AbstractModule {
 				.restrict("2020-12-18", 0.37, "recreation")
 				.restrict("2020-12-25", 0.35, "recreation")
 
-				.restrict("2020-03-20", 0.72, "shopping", "other", "accompany")
-				.restrict("2020-03-27", 0.79, "shopping", "other", "accompany")
-				.restrict("2020-04-03", 0.82, "shopping", "other", "accompany")
-				.restrict("2020-04-10", 0.79, "shopping", "other", "accompany")
-				.restrict("2020-04-17", 0.89, "shopping", "other", "accompany")
-				.restrict("2020-04-24", 0.86, "shopping", "other", "accompany")
-				.restrict("2020-05-01", 0.99, "shopping", "other", "accompany")
-				.restrict("2020-05-08", 0.96, "shopping", "other", "accompany")
-				.restrict("2020-05-15", 0.94, "shopping", "other", "accompany")
-				.restrict("2020-05-22", 0.98, "shopping", "other", "accompany")
-				.restrict("2020-05-29", 0.92, "shopping", "other", "accompany")
-				.restrict("2020-06-05", 0.86, "shopping", "other", "accompany")
-				.restrict("2020-06-12", 0.94, "shopping", "other", "accompany")
-				.restrict("2020-06-19", 1.0, "shopping", "other", "accompany")
-				.restrict("2020-07-31", 0.98, "shopping", "other", "accompany")
-				.restrict("2020-08-07", 0.99, "shopping", "other", "accompany")
-				.restrict("2020-08-14", 0.88, "shopping", "other", "accompany")
-				.restrict("2020-08-21", 0.94, "shopping", "other", "accompany")
-				.restrict("2020-08-28", 0.93, "shopping", "other", "accompany")
-				.restrict("2020-09-25", 1.0, "shopping", "other", "accompany")
-				.restrict("2020-10-02", 0.94, "shopping", "other", "accompany")
-				.restrict("2020-10-09", 1.0, "shopping", "other", "accompany")
-				.restrict("2020-10-16", 0.99, "shopping", "other", "accompany")
-				.restrict("2020-10-30", 0.92, "shopping", "other", "accompany")
-				.restrict("2020-11-06", 0.95, "shopping", "other", "accompany")
-				.restrict("2020-11-20", 0.94, "shopping", "other", "accompany")
-				.restrict("2020-12-18", 0.8, "shopping", "other", "accompany")
-				.restrict("2020-12-25", 0.75, "shopping", "other", "accompany")
+				.restrict("2020-03-20", 0.72, "shopping")
+				.restrict("2020-03-27", 0.79, "shopping")
+				.restrict("2020-04-03", 0.82, "shopping")
+				.restrict("2020-04-10", 0.79, "shopping")
+				.restrict("2020-04-17", 0.89, "shopping")
+				.restrict("2020-04-24", 0.86, "shopping")
+				.restrict("2020-05-01", 0.99, "shopping")
+				.restrict("2020-05-08", 0.96, "shopping")
+				.restrict("2020-05-15", 0.94, "shopping")
+				.restrict("2020-05-22", 0.98, "shopping")
+				.restrict("2020-05-29", 0.92, "shopping")
+				.restrict("2020-06-05", 0.86, "shopping")
+				.restrict("2020-06-12", 0.94, "shopping")
+				.restrict("2020-06-19", 1.0, "shopping")
+				.restrict("2020-07-31", 0.98, "shopping")
+				.restrict("2020-08-07", 0.99, "shopping")
+				.restrict("2020-08-14", 0.88, "shopping")
+				.restrict("2020-08-21", 0.94, "shopping")
+				.restrict("2020-08-28", 0.93, "shopping")
+				.restrict("2020-09-25", 1.0, "shopping")
+				.restrict("2020-10-02", 0.94, "shopping")
+				.restrict("2020-10-09", 1.0, "shopping")
+				.restrict("2020-10-16", 0.99, "shopping")
+				.restrict("2020-10-30", 0.92, "shopping")
+				.restrict("2020-11-06", 0.95, "shopping")
+				.restrict("2020-11-20", 0.94, "shopping")
+				.restrict("2020-12-18", 0.8, "shopping")
+				.restrict("2020-12-25", 0.75, "shopping")
+
+				.restrict("2020-03-13", 0.7, "accompany","other")
+				.restrict("2020-03-20", 0.5, "accompany","other")
+				.restrict("2020-04-03", 0.6, "accompany","other")
+				.restrict("2020-04-17", 0.65, "accompany","other")
+				.restrict("2020-05-01", 0.7, "accompany","other")
+				.restrict("2020-05-15", 0.75, "accompany","other")
+				.restrict("2020-05-22", 0.8, "accompany","other")
+				.restrict("2020-06-05", 0.9, "accompany","other")
+				.restrict("2020-06-12", 1.0, "accompany","other")
+				.restrict("2020-10-09", 0.8, "accompany","other")
 
 				.restrict("2020-02-21", 0.86, "work")
 				.restrict("2020-02-28", 0.99, "work")

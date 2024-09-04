@@ -39,13 +39,13 @@ public class MatsimId2SiloPersonConverter extends AbstractCsvReader {
 		//super.read(filePath, ",");
 
 		//if read from multiple trip file (case in mito7 currently)
-		List<String> weekdays = Arrays.asList("friday","saturday","sunday");
+		List<String> weekdays = Arrays.asList("monday","tuesday","wednesday","thursday","friday","saturday","sunday");
 		List<String> modes = Arrays.asList("autoDriver", "autoPassenger","bicycle","walk","bus","train","tramOrMetro");
 
 		for (String weekday : weekdays) {
 			for (String mode : modes) {
 				// Construct the filename dynamically
-				String fileName = "C:\\models\\mito7\\muc\\scenOutput\\tengos_25pct_noassignment\\2011\\microData\\trips_" + weekday.toLowerCase() + "_" + mode + ".csv";
+				String fileName = "\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\trips_" + weekday.toLowerCase() + "_" + mode + ".csv";
 				Path filePath = Paths.get(fileName);
 
 				logger.info("Reading file: " + filePath);
