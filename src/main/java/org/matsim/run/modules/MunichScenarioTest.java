@@ -100,7 +100,7 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_mon_tues_wed_thur_fri_sat_sun_0.000_000_4\\");
+		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_7days_0.000_000_6\\");
 		//config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
 
 		//if running only one event file for whole week
@@ -138,7 +138,7 @@ public class MunichScenarioTest extends AbstractModule {
 
 		//episimConfig.setInitialInfectionDistrict("Munich");
 		episimConfig.setSampleSize(1);//100% of the 25% matsim simulation
-		episimConfig.setCalibrationParameter(0.000_000_4);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
+		episimConfig.setCalibrationParameter(0.000_000_6);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
 		episimConfig.setMaxContacts(3);
 		String startDate = "2020-02-16";
 		episimConfig.setStartDate(startDate);

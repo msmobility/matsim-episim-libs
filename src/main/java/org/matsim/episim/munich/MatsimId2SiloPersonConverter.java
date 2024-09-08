@@ -45,7 +45,7 @@ public class MatsimId2SiloPersonConverter extends AbstractCsvReader {
 		for (String weekday : weekdays) {
 			for (String mode : modes) {
 				// Construct the filename dynamically
-				String fileName = "\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\trips_" + weekday.toLowerCase() + "_" + mode + ".csv";
+				String fileName = "\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\episum_input\\trips\\trips_" + weekday.toLowerCase() + "_" + mode + ".csv";
 				Path filePath = Paths.get(fileName);
 
 				logger.info("Reading file: " + filePath);
