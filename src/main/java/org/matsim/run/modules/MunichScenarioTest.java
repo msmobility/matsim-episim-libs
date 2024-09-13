@@ -27,12 +27,16 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.episim.EpisimConfigGroup;
 import org.matsim.episim.EpisimUtils;
+import org.matsim.episim.TracingConfigGroup;
 import org.matsim.episim.model.FaceMask;
 import org.matsim.episim.policy.FixedPolicy;
 import org.matsim.episim.policy.Restriction;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,7 +80,7 @@ public class MunichScenarioTest extends AbstractModule {
 		config.getOrAddContainerParams("work").setContactIntensity(1.47).setSpacesPerFacility(20);
 		config.getOrAddContainerParams("education").setContactIntensity(11.).setSpacesPerFacility(20);
 		config.getOrAddContainerParams("shopping").setContactIntensity(0.88).setSpacesPerFacility(20);
-		config.getOrAddContainerParams("recreation").setContactIntensity(9.24).setSpacesPerFacility(20);
+		config.getOrAddContainerParams("recreation").setContactIntensity(9.24).setSpacesPerFacility(20).setSeasonal(true);
 		config.getOrAddContainerParams("other").setContactIntensity(1.47).setSpacesPerFacility(20);
 		config.getOrAddContainerParams("nursing").setContactIntensity(11.).setSpacesPerFacility(20);
 		// freight act:
@@ -100,7 +104,7 @@ public class MunichScenarioTest extends AbstractModule {
 		Config config = ConfigUtils.createConfig(new EpisimConfigGroup());
 		EpisimConfigGroup episimConfig = ConfigUtils.addOrGetModule(config, EpisimConfigGroup.class);
 
-		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_7days_0.000_000_6\\");
+		config.controler().setOutputDirectory("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\25pct_7days_0.000_000_4_seasonal_contacttrace\\");
 		//config.facilities().setInputFile("F:\\models\\tengos_episim\\input/facility_simplified_100mGrid_filtered_ptOnly.xml.gz");
 
 		//if running only one event file for whole week
@@ -138,13 +142,47 @@ public class MunichScenarioTest extends AbstractModule {
 
 		//episimConfig.setInitialInfectionDistrict("Munich");
 		episimConfig.setSampleSize(1);//100% of the 25% matsim simulation
-		episimConfig.setCalibrationParameter(0.000_000_6);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
+		episimConfig.setCalibrationParameter(0.000_000_4);//what's this? original value: 0.000_011_0, we set to: 0.000_002_6
 		episimConfig.setMaxContacts(3);
 		String startDate = "2020-02-16";
 		episimConfig.setStartDate(startDate);
 		episimConfig.setHospitalFactor(1.6);
 		//episimConfig.setEndEarly(true);
+		episimConfig.setThreads(6);
 
+		//weather model
+		try{
+			File weatherCSV = new File("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\weather\\10866_Munich_airport_weather_2020_formatted.csv");
+			File avgWeatherCSV = new File("\\\\nas.ads.mwn.de\\tubv\\mob\\projects\\2021\\tengos\\data\\calibration\\weather\\10866_Munich_airport_weather_2020_formatted.csv");
+
+			// Call the getOutdoorFractions2 method
+			Map<LocalDate, Double> outdoorFractions = EpisimUtils.getOutdoorFractions2(
+				weatherCSV,
+				avgWeatherCSV,
+				0.5,
+				17.5,
+				25.0,
+				5.0
+			);
+
+			episimConfig.setLeisureOutdoorFraction(outdoorFractions);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		//contact tracing
+		TracingConfigGroup tracingConfig = ConfigUtils.addOrGetModule(config, TracingConfigGroup.class);
+
+		int offset = (int) (ChronoUnit.DAYS.between(episimConfig.getStartDate(), LocalDate.parse("2020-04-01")) + 1);
+		tracingConfig.setPutTraceablePersonsInQuarantineAfterDay(offset);
+		double tracingProbability = 0.5;
+		tracingConfig.setTracingProbability(tracingProbability);
+		tracingConfig.setTracingPeriod_days(14);
+		tracingConfig.setMinContactDuration_sec(15 * 60.);
+		tracingConfig.setQuarantineHouseholdMembers(true);
+		tracingConfig.setEquipmentRate(1.);
+		tracingConfig.setTracingDelay_days(2);
+		tracingConfig.setTracingCapacity_pers_per_day(Integer.MAX_VALUE );
 		//long closingIteration = 14;
 		Map<LocalDate, Integer> importMap = new HashMap<>();
 
