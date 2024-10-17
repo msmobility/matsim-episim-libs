@@ -254,7 +254,8 @@ public final class RunEpisim implements Callable<Integer> {
 		if (logToOutput) OutputDirectoryLogging.initLoggingWithOutputDirectory(config.controler().getOutputDirectory());
 
 		EpisimRunner runner = injector.getInstance(EpisimRunner.class);
-		runner.run(maxIterations);
+		//runner.run(maxIterations);
+		runner.run(260);
 
 		if (logToOutput) OutputDirectoryLogging.closeOutputDirLogging();
 
